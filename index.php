@@ -1,10 +1,6 @@
 <?php
-require_once("./vendor/autoload.php");
-use App\Views\BaseTemplate;
+require 'vendor/autoload.php'; // Если используете Composer, иначе подключите вручную
+use App\BaseTemplate;
 
-$template = BaseTemplate::getTemplate();
-$resultTemplate =  sprintf($template, 
-    "Основная страница", 
-    "<p>Пиццерия ИС-231 - это вкусная пицца, которую вам доставят прямо на занятия в 409 кабинет!</p>");
-
-echo $resultTemplate;
+$template = new BaseTemplate();
+$template->render("<h1>Главная страница в стиле MVC</h1>");
