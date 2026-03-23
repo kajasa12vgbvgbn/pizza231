@@ -316,3 +316,50 @@ html, body {
     color: #000 !important;
     border-color: #ffffff;
 }
+/* Стеклянный эффект для карточек */
+.bg-glass {
+    background: rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Анимация для кнопки корзины */
+.btn-add-to-cart {
+    transition: all 0.2s ease;
+}
+.btn-add-to-cart:active {
+    transform: scale(0.98);
+}
+
+/* Счётчик корзины */
+.cart-counter {
+    min-width: 20px;
+    padding: 0.25em 0.5em;
+    animation: pulse 0.3s ease;
+}
+@keyframes pulse {
+    0% { transform: translate(-50%, -50%) scale(1); }
+    50% { transform: translate(-50%, -50%) scale(1.2); }
+    100% { transform: translate(-50%, -50%) scale(1); }
+}
+
+/* Таблица корзины */
+.table-dark {
+    --bs-table-bg: transparent;
+    --bs-table-color: #fff;
+}
+.table-dark tbody tr:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Инпуты количества */
+.quantity-input {
+    background-color: #212529 !important;
+    border-color: #6c757d !important;
+    color: #fff !important;
+}
+.quantity-input::-webkit-outer-spin-button,
+.quantity-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}

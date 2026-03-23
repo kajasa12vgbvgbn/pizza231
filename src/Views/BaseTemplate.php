@@ -52,6 +52,18 @@ class BaseTemplate
                     <li class="nav-item">
                         <a class="nav-link active" href="/">Главная</a>
                     </li>
+                    <!-- ... существующие пункты меню ... -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="/catalog">Каталог</a>
+                    </li>
+                    <!-- 👇 НОВЫЙ ПУНКТ: КОРЗИНА -->
+                    <li class="nav-item position-relative">
+                        <a class="nav-link" href="/cart">
+                            <i class="bi bi-cart"></i>
+                            <span class="cart-counter badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle" 
+                                style="display: none; font-size: 0.7rem;">0</span>
+                        </a>
+                    </li>
                     <li class="nav-item">
                         <a class="nav-link" href="/about">О нас</a>
                     </li>
@@ -83,7 +95,8 @@ class BaseTemplate
 
     <!-- Скрипт Bootstrap (для работы меню и карусели) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
+        <!-- 👇 Глобальный скрипт корзины -->
+    <script src="/assets/js/cart.js"></script>
 </body>
 </html>
 HTML;

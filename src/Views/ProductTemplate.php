@@ -12,19 +12,29 @@ class ProductTemplate extends BaseTemplate
                     <h4 class="alert-heading">Товар не найден!</h4>
                     <p>К сожалению, товар с таким идентификатором отсутствует в нашем каталоге.</p>
                     <hr>
-                    <a href="/product/1" class="btn btn-outline-warning">Попробовать товар №1</a>
+                    <a href="/catalog" class="btn btn-outline-warning">Вернуться в каталог</a>
                 </div>
             </div>';
         }
         
         $image = $data['image'];
-        $fallbackImage = '\\assets\\img\\error.jpg';
+        $fallbackImage = '/assets/img/error.jpg';
         
+        $id = (int)($data['id'] ?? 0);
         $title = htmlspecialchars($data['name'] ?? 'Без названия');
         $description = htmlspecialchars($data['description'] ?? 'Описание отсутствует.');
-        $price = number_format((float)($data['price'] ?? 0), 0, '.', ' '); 
+        $price = (float)($data['price'] ?? 0);
+        $priceFormatted = number_format($price, 0, '.', ' '); 
         
-        $finalImage = (!empty($image)) ? $image : $fallbackImage;
+        $finalImage = (!empty($image)) ? htmlspecialchars($image) : $fallbackImage;
+
+        // 👇 Данные для JS (безопасно через json_encode)
+        $productJson = htmlspecialchars(json_encode([
+            'id' => $id,
+            'name' => $data['name'] ?? '',
+            'price' => $price,
+            'image' => $data['image'] ?? ''
+        ], JSON_UNESCAPED_UNICODE), ENT_QUOTES);
 
         return parent::getTemplate('
         <div class="container py-5">
@@ -61,18 +71,22 @@ class ProductTemplate extends BaseTemplate
                             <!-- Цена и статус -->
                             <div class="mt-auto">
                                 <div class="d-flex align-items-center mb-4">
-                                    <span class="display-5 fw-bold me-3 text-white">' . $price . ' ₽</span>
+                                    <span class="display-5 fw-bold me-3 text-white">' . $priceFormatted . ' ₽</span>
                                     <span class="badge bg-success bg-opacity-25 text-white px-3 py-2 rounded-pill border border-success border-opacity-50">В наличии</span>
                                 </div>
                                 
                                 <!-- Кнопки -->
                                 <div class="d-grid gap-2 d-md-flex justify-content-md-start">
-                                    <button type="button" class="btn btn-light btn-lg px-4 me-md-2 fw-bold shadow-sm">
+                                    <!-- 👇 Кнопка "В корзину" с data-атрибутами -->
+                                    <button type="button" 
+                                            class="btn btn-light btn-lg px-4 me-md-2 fw-bold shadow-sm btn-add-to-cart"
+                                            data-product=\'' . $productJson . '\'
+                                            id="add-to-cart-' . $id . '">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-cart-plus me-2 text-dark" viewBox="0 0 16 16">
                                             <path d="M9 5.5a.5.5 0 0 0-1 0V7H6.5a.5.5 0 0 0 0 1H8v1.5a.5.5 0 0 0 1 0V8h1.5a.5.5 0 0 0 0-1H9z"/>
                                             <path d="M.5 1a.5.5 0 0 0 0 1h1.11l.401 1.607 1.498 7.985A.5.5 0 0 0 4 12h1a2 2 0 1 0 0 4 2 2 0 0 0 0-4h7a2 2 0 1 0 0 4 2 2 0 0 0 0-4h1a.5.5 0 0 0 .491-.408l1.5-8A.5.5 0 0 0 14.5 3H2.89l-.405-1.621A.5.5 0 0 0 2 1zM6 14a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm7 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
                                         </svg>
-                                        В корзину
+                                        <span class="btn-text">В корзину</span>
                                     </button>
                                     <a href="/" class="btn btn-outline-light btn-lg px-4">На главную</a>
                                 </div>
@@ -96,6 +110,108 @@ class ProductTemplate extends BaseTemplate
             </div>
         </div>
     </div>
-</div>');
+</div>
+
+<!-- 👇 Toast-уведомление (скрыто по умолчанию) -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="cartToast" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                <span id="toastMessage">Товар добавлен в корзину!</span>
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+
+<!-- 👇 Скрипт корзины -->
+<script>
+document.addEventListener(\'DOMContentLoaded\', function() {
+    // Инициализация Bootstrap Toast
+    const toastEl = document.getElementById(\'cartToast\');
+    const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
+    
+    // Обработчик кнопки "В корзину"
+    document.querySelectorAll(\'.btn-add-to-cart\').forEach(button => {
+        button.addEventListener(\'click\', function() {
+            const productData = JSON.parse(this.dataset.product);
+            addToCart(productData);
+            showAddedAnimation(this);
+        });
+    });
+    
+    // 👇 Функция добавления в корзину (localStorage)
+    function addToCart(product) {
+        // Получаем текущую корзину или создаём новую
+        let cart = JSON.parse(localStorage.getItem(\'cart\') || \'[]\');
+        
+        // Проверяем, есть ли товар уже в корзине
+        const existingItem = cart.find(item => item.id === product.id);
+        
+        if (existingItem) {
+            existingItem.quantity += 1;
+        } else {
+            cart.push({
+                id: product.id,
+                name: product.name,
+                price: product.price,
+                image: product.image,
+                quantity: 1
+            });
+        }
+        
+        // Сохраняем обновлённую корзину
+        localStorage.setItem(\'cart\', JSON.stringify(cart));
+        
+        // Обновляем счётчик в навбаре (если есть)
+        updateCartCounter();
+        
+        // Показываем уведомление
+        document.getElementById(\'toastMessage\').textContent = 
+            `\\"манго\\" добавлен в корзину!`;
+        toast.show();
+    }
+    
+    // 👇 Анимация кнопки при добавлении
+    function showAddedAnimation(button) {
+        const originalText = button.querySelector(\'.btn-text\');
+        const originalIcon = button.querySelector(\'svg\');
+        
+        // Сохраняем оригиналы
+        const originalContent = button.innerHTML;
+        
+        // Меняем на "Добавлено!"
+        button.disabled = true;
+        button.innerHTML = \'<i class="bi bi-check-lg me-2"></i>Добавлено!\';
+        button.classList.add(\'btn-success\');
+        button.classList.remove(\'btn-light\');
+        
+        // Возвращаем через 2 секунды
+        setTimeout(() => {
+            button.innerHTML = originalContent;
+            button.disabled = false;
+            button.classList.remove(\'btn-success\');
+            button.classList.add(\'btn-light\');
+        }, 2000);
+    }
+    
+    // 👇 Обновление счётчика в навбаре
+    function updateCartCounter() {
+        const cart = JSON.parse(localStorage.getItem(\'cart\') || \'[]\');
+        const totalCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+        
+        // Ищем и обновляем бейдж в навбаре (если есть)
+        const counter = document.querySelector(\'.cart-counter\');
+        if (counter) {
+            counter.textContent = totalCount;
+            counter.style.display = totalCount > 0 ? \'inline\' : \'none\';
+        }
+    }
+    
+    // Запускаем обновление счётчика при загрузке
+    updateCartCounter();
+});
+</script>');
     }
 }
