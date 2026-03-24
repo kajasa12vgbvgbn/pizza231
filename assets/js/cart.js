@@ -3,7 +3,74 @@
  */
 const CartManager = {
     STORAGE_KEY: 'cart',
+    _fullscreenToastShown: false, // Флаг: чтобы не показывать подряд
+
+    showFullscreenToast(message = 'Товар добавлен в корзину!', duration = 2500) {
+        const toast = document.getElementById('fullscreenToast');
+        const video = document.getElementById('toastVideo');
+        const messageEl = document.getElementById('fullscreenToastMessage');
+        
+        if (!toast || !video) return;
+        
+        // Обновляем текст
+        if (messageEl) messageEl.textContent = message;
+        
+        // Сбрасываем видео на начало и запускаем
+        video.currentTime = 0;
+        video.play().catch(e => console.log('Video play error:', e));
+        
+        // Показываем Toast
+        toast.classList.add('show');
+        toast.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('toast-open');
+        
+        // Автоматическое закрытие
+        if (this._toastTimer) clearTimeout(this._toastTimer);
+        this._toastTimer = setTimeout(() => {
+            this.hideFullscreenToast();
+        }, duration);
+    },
     
+    // 👇 Скрыть полноэкранный Toast
+    hideFullscreenToast() {
+        const toast = document.getElementById('fullscreenToast');
+        const video = document.getElementById('toastVideo');
+        
+        if (!toast) return;
+        
+        toast.classList.remove('show');
+        toast.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('toast-open');
+        
+        // Останавливаем видео
+        if (video) {
+            video.pause();
+            video.currentTime = 0;
+        }
+    },
+    
+    // 👇 Обновлённый showToast: выбирает тип уведомления
+    showToast(message, type = 'success', useFullscreen = true) {
+        // Если нужно полноэкранное уведомление и оно не показано прямо сейчас
+        if (useFullscreen && !this._fullscreenToastShown) {
+            this._fullscreenToastShown = true;
+            this.showFullscreenToast(message);
+            
+            // Сбрасываем флаг через небольшую задержку (чтобы можно было показать снова)
+            setTimeout(() => { this._fullscreenToastShown = false; }, 3000);
+            return;
+        }
+        
+        // Fallback на маленький Toast
+        const toastEl = document.getElementById('cartToast');
+        if (!toastEl) return;
+        
+        toastEl.className = `toast align-items-center text-bg-${type} border-0`;
+        document.getElementById('toastMessage').textContent = message;
+        
+        const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
+        toast.show();
+    },
     // Получить корзину
     get() {
         return JSON.parse(localStorage.getItem(this.STORAGE_KEY) || '[]');
@@ -85,7 +152,7 @@ const CartManager = {
     },
     
     // Показать уведомление
-    showToast(message, type = 'success') {
+    /*showToast(message, type = 'success') {
         const toastEl = document.getElementById('cartToast');
         if (!toastEl) return;
         
@@ -95,7 +162,7 @@ const CartManager = {
         
         const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
         toast.show();
-    },
+    },*/
     
     // Синхронизация с бэкендом (опционально)
     syncToBackend(id, name, price, image, quantity) {

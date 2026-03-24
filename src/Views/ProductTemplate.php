@@ -113,104 +113,43 @@ class ProductTemplate extends BaseTemplate
 </div>
 
 <!-- 👇 Toast-уведомление (скрыто по умолчанию) -->
+<!-- 👇 ПОЛНОЭКРАННЫЙ TOAST С ВИДЕО (скрыт по умолчанию) -->
+<div id="fullscreenToast" class="fullscreen-toast" aria-hidden="true">
+    <button class="toast-close" id="closeFullscreenToast" aria-label="Закрыть">
+        <i class="bi bi-x-lg"></i>
+    </button>
+    
+    <video class="toast-video" id="toastVideo" autoplay muted playsinline loop>
+        <source src="/assets/img/cat.mp4" type="video/mp4">
+        Ваш браузер не поддерживает видео.
+    </video>
+    
+    <div class="toast-message" id="fullscreenToastMessage">
+        🎉 Товар добавлен в корзину!
+    </div>
+</div>
+
+<!-- 👇 Стандартный маленький Toast (оставляем для других уведомлений) -->
 <div class="toast-container position-fixed bottom-0 end-0 p-3">
-    <div id="cartToast" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+    <div id="cartToast" class="toast align-items-center text-bg-success border-0" role="alert">
         <div class="d-flex">
             <div class="toast-body">
                 <i class="bi bi-check-circle-fill me-2"></i>
                 <span id="toastMessage">Товар добавлен в корзину!</span>
             </div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
         </div>
     </div>
 </div>
 
 <!-- 👇 Скрипт корзины -->
 <script>
-document.addEventListener(\'DOMContentLoaded\', function() {
-    // Инициализация Bootstrap Toast
-    const toastEl = document.getElementById(\'cartToast\');
-    const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
-    
-    // Обработчик кнопки "В корзину"
-    document.querySelectorAll(\'.btn-add-to-cart\').forEach(button => {
-        button.addEventListener(\'click\', function() {
-            const productData = JSON.parse(this.dataset.product);
-            addToCart(productData);
-            showAddedAnimation(this);
-        });
-    });
-    
-    // 👇 Функция добавления в корзину (localStorage)
-    function addToCart(product) {
-        // Получаем текущую корзину или создаём новую
-        let cart = JSON.parse(localStorage.getItem(\'cart\') || \'[]\');
-        
-        // Проверяем, есть ли товар уже в корзине
-        const existingItem = cart.find(item => item.id === product.id);
-        
-        if (existingItem) {
-            existingItem.quantity += 1;
-        } else {
-            cart.push({
-                id: product.id,
-                name: product.name,
-                price: product.price,
-                image: product.image,
-                quantity: 1
-            });
-        }
-        
-        // Сохраняем обновлённую корзину
-        localStorage.setItem(\'cart\', JSON.stringify(cart));
-        
-        // Обновляем счётчик в навбаре (если есть)
-        updateCartCounter();
-        
-        // Показываем уведомление
-        document.getElementById(\'toastMessage\').textContent = 
-            `\\"манго\\" добавлен в корзину!`;
-        toast.show();
+document.addEventListener("DOMContentLoaded", function() {
+    // Инициализируем Toast, если элемент есть на странице
+    const toastEl = document.getElementById("cartToast");
+    if (toastEl && typeof bootstrap !== "undefined") {
+        window.cartToast = new bootstrap.Toast(toastEl, { delay: 3000 });
     }
-    
-    // 👇 Анимация кнопки при добавлении
-    function showAddedAnimation(button) {
-        const originalText = button.querySelector(\'.btn-text\');
-        const originalIcon = button.querySelector(\'svg\');
-        
-        // Сохраняем оригиналы
-        const originalContent = button.innerHTML;
-        
-        // Меняем на "Добавлено!"
-        button.disabled = true;
-        button.innerHTML = \'<i class="bi bi-check-lg me-2"></i>Добавлено!\';
-        button.classList.add(\'btn-success\');
-        button.classList.remove(\'btn-light\');
-        
-        // Возвращаем через 2 секунды
-        setTimeout(() => {
-            button.innerHTML = originalContent;
-            button.disabled = false;
-            button.classList.remove(\'btn-success\');
-            button.classList.add(\'btn-light\');
-        }, 2000);
-    }
-    
-    // 👇 Обновление счётчика в навбаре
-    function updateCartCounter() {
-        const cart = JSON.parse(localStorage.getItem(\'cart\') || \'[]\');
-        const totalCount = cart.reduce((sum, item) => sum + item.quantity, 0);
-        
-        // Ищем и обновляем бейдж в навбаре (если есть)
-        const counter = document.querySelector(\'.cart-counter\');
-        if (counter) {
-            counter.textContent = totalCount;
-            counter.style.display = totalCount > 0 ? \'inline\' : \'none\';
-        }
-    }
-    
-    // Запускаем обновление счётчика при загрузке
-    updateCartCounter();
 });
 </script>');
     }
