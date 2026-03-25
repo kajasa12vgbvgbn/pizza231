@@ -3,8 +3,10 @@ namespace App\Views;
 
 require_once __DIR__ . '/BaseTemplate.php';
 require_once __DIR__ . '/../Models/Product.php';
+require_once __DIR__ . '/../Config/Config.php';
 
 use App\Models\Product;
+use App\Config\Config;
 
 class HomeTemplate extends BaseTemplate
 {
@@ -21,6 +23,9 @@ class HomeTemplate extends BaseTemplate
         
         // Генерируем HTML для карточек товаров
         $productsHtml = self::renderProducts($products);
+
+        // Показывать ли каталог на главной
+        $showCatalog = Config::SHOW_CATALOG_AT_HOME;
 
         // Подключаем шаблон
         ob_start();

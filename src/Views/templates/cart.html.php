@@ -20,7 +20,7 @@
 </div>
 <?php else: ?>
 <div class="container py-5">
-    <h1 class="text-center mb-4">🛒 Ваша корзина</h1>
+    <h1 class="text-center mb-4">Ваша корзина</h1>
     
     <div class="card shadow-lg">
         <div class="card-body p-4">

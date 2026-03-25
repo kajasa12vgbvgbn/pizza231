@@ -3,6 +3,7 @@
  * Шаблон главной страницы
  * Доступные переменные:
  * - $productsHtml - HTML карточек товаров
+ * - $showCatalog - показывать ли каталог на главной
  */
 ?>
 
@@ -33,6 +34,7 @@
         </div>
     </div>
     
+    <?php if ($showCatalog): ?>
     <!-- Секция с товарами -->
     <div class="row mb-5">
         <div class="col-12">
@@ -40,4 +42,5 @@
             <?= $productsHtml ?>
         </div>
     </div>
+    <?php endif; ?>
 </div>
