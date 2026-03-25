@@ -12,7 +12,7 @@
     <!-- Заголовок + Поиск -->
     <div class="row mb-5">
         <div class="col-12 text-center">
-            <h1 class="display-5 fw-bold mb-4 text-white">Каталог товаров</h1>
+            <h1 class="display-5 fw-bold mb-4">Каталог товаров</h1>
             
             <!-- Форма поиска -->
             <form method="GET" action="/catalog" class="col-md-6 col-lg-4 mx-auto">

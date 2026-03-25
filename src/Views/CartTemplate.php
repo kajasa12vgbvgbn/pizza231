@@ -48,19 +48,19 @@ class CartTemplate extends BaseTemplate
                                  class="rounded me-3" 
                                  style="width: 60px; height: 60px; object-fit: cover;"
                                  onerror="this.src=\'/assets/img/no-image.jpg\'">
-                            <span class="text-white fw-medium">' . $name . '</span>
+                            <span class="fw-medium">' . $name . '</span>
                         </div>
                     </td>
-                    <td class="py-3 text-white">' . $price . ' ₽</td>
+                    <td class="py-3">' . $price . ' ₽</td>
                     <td class="py-3">
                         <div class="input-group input-group-sm" style="max-width: 120px;">
-                            <button class="btn btn-outline-light btn-quantity" data-action="decrease" data-id="' . $id . '">−</button>
-                            <input type="number" class="form-control text-center bg-dark text-white border-light quantity-input" 
+                            <button class="btn btn-outline-secondary btn-quantity" data-action="decrease" data-id="' . $id . '">−</button>
+                            <input type="number" class="form-control text-center quantity-input" 
                                    value="' . $quantity . '" data-id="' . $id . '" min="1">
-                            <button class="btn btn-outline-light btn-quantity" data-action="increase" data-id="' . $id . '">+</button>
+                            <button class="btn btn-outline-secondary btn-quantity" data-action="increase" data-id="' . $id . '">+</button>
                         </div>
                     </td>
-                    <td class="py-3 text-white fw-bold">' . number_format($subtotal, 0, '.', ' ') . ' ₽</td>
+                    <td class="py-3 fw-bold">' . number_format($subtotal, 0, '.', ' ') . ' ₽</td>
                     <td class="py-3 text-end">
                         <button class="btn btn-sm btn-outline-danger btn-remove" data-id="' . $id . '" title="Удалить">
                             <i class="bi bi-trash"></i>

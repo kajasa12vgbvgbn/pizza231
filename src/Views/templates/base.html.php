@@ -1,6 +1,6 @@
 <?php
 /**
- * Базовый шаблон страницы (Dark Theme)
+ * Базовый шаблон страницы
  * Доступные переменные:
  * - $content - основной контент страницы
  */
@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white">
         <div class="container"> 
             <a class="navbar-brand" href="/">
                 <img src="/assets/img/logo.svg" alt="Логотип" width="120" height="40">

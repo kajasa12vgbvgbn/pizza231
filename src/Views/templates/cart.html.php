@@ -12,22 +12,22 @@
 <?php if ($isEmpty): ?>
 <div class="container py-5">
     <div class="text-center py-5">
-        <i class="bi bi-cart-x display-1 text-white-50 mb-3"></i>
-        <h3 class="text-white">Ваша корзина пуста 😔</h3>
-        <p class="text-white-50">Добавьте товары из каталога</p>
+        <i class="bi bi-cart-x display-1 text-muted mb-3"></i>
+        <h3>Ваша корзина пуста 😔</h3>
+        <p class="text-muted">Добавьте товары из каталога</p>
         <a href="/catalog" class="btn btn-primary mt-3">Перейти в каталог</a>
     </div>
 </div>
 <?php else: ?>
 <div class="container py-5">
-    <h1 class="text-center mb-4 text-white">🛒 Ваша корзина</h1>
+    <h1 class="text-center mb-4">🛒 Ваша корзина</h1>
     
-    <div class="card bg-glass border-0 shadow-lg">
+    <div class="card shadow-lg">
         <div class="card-body p-4">
             <div class="table-responsive">
-                <table class="table table-dark table-hover align-middle mb-0">
-                    <thead>
-                        <tr class="text-white-50">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
                             <th>Товар</th>
                             <th>Цена</th>
                             <th>Кол-во</th>
@@ -41,19 +41,19 @@
                 </table>
             </div>
             
-            <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top border-white border-opacity-10">
+            <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
                 <div>
-                    <span class="text-white-50">Всего товаров: </span>
-                    <span class="text-white fw-bold"><?= $count ?></span>
+                    <span class="text-muted">Всего товаров: </span>
+                    <span class="fw-bold"><?= $count ?></span>
                 </div>
                 <div class="text-end">
-                    <span class="text-white-50 d-block">Итого:</span>
-                    <span class="h3 fw-bold text-warning mb-0"><?= $totalFormatted ?> ₽</span>
+                    <span class="text-muted d-block">Итого:</span>
+                    <span class="h3 fw-bold text-success mb-0"><?= $totalFormatted ?> ₽</span>
                 </div>
             </div>
             
             <div class="d-flex gap-3 justify-content-end mt-4">
-                <button class="btn btn-outline-light" id="clear-cart">
+                <button class="btn btn-outline-dark" id="clear-cart">
                     <i class="bi bi-trash me-2"></i>Очистить
                 </button>
                 <button class="btn btn-success btn-lg px-4" id="checkout-btn">

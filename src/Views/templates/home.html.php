@@ -20,9 +20,9 @@
         <div class="col-md-6">
             <h2 class="mb-3">Почему выбирают нас?</h2>
             <ul class="list-group list-group-flush">
-                <li class="list-group-item bg-transparent"><i class="bi bi-check-circle-fill text-success"></i> Оригинальные запчасти</li>
-                <li class="list-group-item bg-transparent"><i class="bi bi-check-circle-fill text-success"></i> Наличие большого количества деталей</li>
-                <li class="list-group-item bg-transparent"><i class="bi bi-check-circle-fill text-success"></i> Доступные цены</li>
+                <li class="list-group-item"><i class="bi bi-check-circle-fill text-success"></i> Оригинальные запчасти</li>
+                <li class="list-group-item"><i class="bi bi-check-circle-fill text-success"></i> Наличие большого количества деталей</li>
+                <li class="list-group-item"><i class="bi bi-check-circle-fill text-success"></i> Доступные цены</li>
             </ul>
         </div>
         <div class="col-md-6">

@@ -8,47 +8,14 @@ html, body {
 
 body {
     font-family: 'Segoe UI', sans-serif;
-    background-color: transparent;
-    position: relative;
-    z-index: 1;
-    color: #ffffff !important;
-}
-
-/* Затемнение фона */
-body::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    /* ЗАДНИЙ ФОН */
-    background: rgba(0, 0, 0, 0.7);
-    z-index: -1;
-}
-
-/* Фоновое видео */
-.bg-video {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    z-index: -2;
-    filter: blur(8px);
-    transform: scale(1.1);
+    background-color: #f8f9fa;
+    color: #212529 !important;
 }
 
 /* === Навигация === */
 .navbar {
-    background: rgba(138, 138, 138, 0.85) !important;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border-radius: 0 0 20px 20px;
-    margin: 0 15px;
-    width: calc(100% - 30px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    background: #fff !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     position: relative;
     z-index: 1000;
 }
@@ -59,102 +26,89 @@ body::before {
 }
 
 .navbar-nav .nav-link {
-    color: rgba(255, 255, 255, 0.9) !important;
+    color: #212529 !important;
     font-weight: 500;
     transition: color 0.2s;
 }
 
 .navbar-nav .nav-link:hover {
-    color: #ffc107 !important;
+    color: #0d6efd !important;
 }
 
 .navbar-toggler {
-    border: 1px solid rgba(255, 255, 255, 0.5) !important;
+    border: 1px solid rgba(0, 0, 0, 0.2) !important;
 }
 
 .navbar-toggler-icon {
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255, 255, 255, 0.9)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(33, 37, 41, 0.9)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important;
 }
 
 /* === Подвал === */
 .footer {
     flex-shrink: 0;
-    background: rgba(0, 0, 0, 0.8);
+    background: #212529;
     margin-top: auto;
 }
 
 /* === Карточки === */
 .card {
-    border: none;
+    border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 15px;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     transition: transform 0.3s, box-shadow 0.3s;
 }
 
 .card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
-}
-
-.bg-glass {
-    background: rgba(255, 255, 255, 0.1) !important;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    animation: fadeInUp 0.5s ease-out;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
 }
 
 /* === Изображение в карточке товара === */
 .bg-image-block {
-    background: rgba(0, 0, 0, 0.2) !important;
+    background: #f8f9fa !important;
 }
 
 /* === Заголовки === */
 h1, h2, h3, h4, h5, h6 {
     font-weight: 700;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    color: #212529 !important;
 }
 
 /* === Герой-секция === */
 .hero-section {
-    background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('/assets/img/banner.webp');
+    background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('/assets/img/banner.webp');
     background-size: cover;
     background-position: center;
     padding: 100px 0;
     border-radius: 0 0 20px 20px;
     margin-bottom: 30px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    color: #fff;
+}
+
+.hero-section h1, .hero-section p {
+    color: #fff !important;
 }
 
 /* === Список === */
 .list-group-item {
-    background: rgba(255, 255, 255, 0.1) !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    background: #fff !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
 }
 
 /* === Кнопки === */
 .btn {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     transition: all 0.2s ease;
 }
 
 .btn:hover {
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
     transform: translateY(-2px);
 }
 
 .btn:active {
     transform: scale(0.98);
-}
-
-.btn-light:hover {
-    box-shadow: 0 6px 20px rgba(255, 255, 255, 0.3) !important;
-}
-
-.btn-light .bi, .btn-light svg {
-    color: #000 !important;
 }
 
 .btn-outline-light {
@@ -167,45 +121,53 @@ h1, h2, h3, h4, h5, h6 {
     border-color: #fff;
 }
 
-.btn-add-to-cart:active {
-    transform: scale(0.98);
-}
-
 /* === Формы === */
 input, textarea, select {
-    background: rgba(255, 255, 255, 0.9) !important;
-    color: #000 !important;
+    background: #fff !important;
+    border: 1px solid #ced4da !important;
+    color: #212529 !important;
+}
+
+input:focus, textarea:focus, select:focus {
+    border-color: #0d6efd !important;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
 }
 
 /* === Иконки === */
 .bi {
-    color: #fff !important;
+    color: #212529 !important;
 }
 
-.text-white-50 i.bi {
-    color: rgba(255, 255, 255, 0.7) !important;
+.text-muted .bi {
+    color: #6c757d !important;
 }
 
 /* === Бейджи === */
 .badge.bg-success {
-    background: rgba(25, 135, 84, 0.9) !important;
+    background: #198754 !important;
 }
 
 /* === Таблица корзины === */
 .table-dark {
-    --bs-table-bg: transparent;
-    --bs-table-color: #fff;
+    --bs-table-bg: #fff;
+    --bs-table-color: #212529;
+    --bs-table-border-color: #dee2e6;
+}
+
+.table-dark thead {
+    background: #212529;
+    color: #fff;
 }
 
 .table-dark tbody tr:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: #f8f9fa;
 }
 
 /* Количество в корзине */
 .quantity-input {
-    background-color: #212529 !important;
-    border-color: #6c757d !important;
-    color: #fff !important;
+    background-color: #fff !important;
+    border-color: #ced4da !important;
+    color: #212529 !important;
 }
 
 .quantity-input::-webkit-outer-spin-button,
@@ -234,7 +196,7 @@ input, textarea, select {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.92);
+    background: rgba(255, 255, 255, 0.95);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -255,29 +217,28 @@ input, textarea, select {
     height: min(90vh, 400px);
     object-fit: contain;
     border-radius: 20px;
-    box-shadow: 0 0 50px rgba(255, 193, 7, 0.6);
+    box-shadow: 0 0 50px rgba(13, 110, 253, 0.4);
     animation: blink-border 0.4s ease-in-out infinite alternate, fadeInUp 0.5s ease forwards;
     background: #000;
 }
 
 @keyframes blink-border {
     0% {
-        box-shadow: 0 0 20px rgba(255, 193, 7, 0.3), 0 0 40px rgba(255, 193, 7, 0.2);
+        box-shadow: 0 0 20px rgba(13, 110, 253, 0.3), 0 0 40px rgba(13, 110, 253, 0.2);
         transform: scale(1);
     }
     100% {
-        box-shadow: 0 0 60px rgba(255, 193, 7, 0.9), 0 0 100px rgba(255, 193, 7, 0.6), 0 0 140px rgba(255, 193, 7, 0.3);
+        box-shadow: 0 0 60px rgba(13, 110, 253, 0.7), 0 0 100px rgba(13, 110, 253, 0.5), 0 0 140px rgba(13, 110, 253, 0.3);
         transform: scale(1.02);
     }
 }
 
 #fullscreenToast .toast-message {
-    color: #fff;
+    color: #212529;
     font-size: clamp(1.2rem, 4vw, 2rem);
     font-weight: 600;
     margin-top: 2rem;
     text-align: center;
-    text-shadow: 0 2px 10px rgba(0,0,0,0.5);
     animation: pulse-text 1s ease-in-out infinite;
 }
 
@@ -290,9 +251,9 @@ input, textarea, select {
     position: absolute;
     top: 2rem;
     right: 2rem;
-    background: rgba(255,255,255,0.15);
-    border: 2px solid rgba(255,255,255,0.3);
-    color: #fff;
+    background: rgba(0, 0, 0, 0.1);
+    border: 2px solid rgba(0, 0, 0, 0.2);
+    color: #212529;
     width: 50px;
     height: 50px;
     border-radius: 50%;
@@ -305,7 +266,7 @@ input, textarea, select {
 }
 
 #fullscreenToast .toast-close:hover {
-    background: rgba(255,255,255,0.3);
+    background: rgba(0, 0, 0, 0.2);
     transform: rotate(90deg);
 }
 
@@ -316,6 +277,12 @@ input, textarea, select {
 
 body.toast-open {
     overflow: hidden;
+}
+
+/* === Контейнеры === */
+main {
+    background: #f8f9fa;
+    min-height: 100%;
 }
 
 /* === Адаптив === */

@@ -62,7 +62,7 @@ class CatalogTemplate extends BaseTemplate
             
             $html .= '
             <div class="col">
-                <div class="card h-100 bg-glass border-0 shadow-sm">
+                <div class="card h-100 shadow-sm">
                     <div class="position-relative">
                         <img src="' . $image . '" 
                              class="card-img-top p-3" 
@@ -72,11 +72,11 @@ class CatalogTemplate extends BaseTemplate
                         <span class="badge bg-success position-absolute top-0 end-0 m-3">В наличии</span>
                     </div>
                     <div class="card-body d-flex flex-column">
-                        <h5 class="card-title fw-bold text-white">' . $name . '</h5>
-                        <p class="card-text text-white-50 small flex-grow-1">' . $shortDesc . '</p>
-                        <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top border-white border-opacity-10">
-                            <span class="h5 mb-0 text-white">' . $price . ' ₽</span>
-                            <a href="/product/' . $id . '" class="btn btn-outline-light btn-sm px-3">Подробнее</a>
+                        <h5 class="card-title fw-bold">' . $name . '</h5>
+                        <p class="card-text text-muted small flex-grow-1">' . $shortDesc . '</p>
+                        <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                            <span class="h5 mb-0">' . $price . ' ₽</span>
+                            <a href="/product/' . $id . '" class="btn btn-outline-dark btn-sm px-3">Подробнее</a>
                         </div>
                     </div>
                 </div>
@@ -94,10 +94,10 @@ class CatalogTemplate extends BaseTemplate
         return '
         <div class="col-12">
             <div class="text-center py-5">
-                <i class="bi bi-search display-1 text-white-50 mb-3"></i>
-                <h4 class="text-white">Ничего не найдено 😔</h4>
-                <p class="text-white-50">Попробуйте изменить поисковый запрос</p>
-                <a href="/catalog" class="btn btn-outline-light mt-3">Сбросить фильтр</a>
+                <i class="bi bi-search display-1 text-muted mb-3"></i>
+                <h4>Ничего не найдено 😔</h4>
+                <p class="text-muted">Попробуйте изменить поисковый запрос</p>
+                <a href="/catalog" class="btn btn-outline-dark mt-3">Сбросить фильтр</a>
             </div>
         </div>';
     }
@@ -108,10 +108,10 @@ class CatalogTemplate extends BaseTemplate
     private static function renderSearchInfo(int $count, string $search): string
     {
         if (empty($search)) {
-            return '<p class="text-white-50 mt-3">Всего товаров: <strong class="text-white">' . $count . '</strong></p>';
+            return '<p class="text-muted mt-3">Всего товаров: <strong>' . $count . '</strong></p>';
         }
         
         $query = htmlspecialchars($search);
-        return '<p class="text-white-50 mt-3">Найдено по запросу "' . $query . '": <strong class="text-white">' . $count . '</strong></p>';
+        return '<p class="text-muted mt-3">Найдено по запросу "' . $query . '": <strong>' . $count . '</strong></p>';
     }
 }
