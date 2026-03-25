@@ -2,61 +2,32 @@
 namespace App\Views;
 
 require_once __DIR__ . '/BaseTemplate.php';
-require_once __DIR__ . '/../Models/Product.php'; // Подключаем модель
+require_once __DIR__ . '/../Models/Product.php';
 
 use App\Models\Product;
 
 class HomeTemplate extends BaseTemplate
 {
+    /**
+     * Путь к файлу шаблона
+     */
+    private const TEMPLATE_PATH = __DIR__ . '/templates/home.html.php';
+
     public static function getTemplate(string $content = ''): string 
     {
-        // 👇 Загружаем продукты через модель
+        // Загружаем продукты через модель
         $productModel = new Product();
         $products = $productModel->loadData() ?? [];
         
-        // 👇 Генерируем HTML для карточек товаров
+        // Генерируем HTML для карточек товаров
         $productsHtml = self::renderProducts($products);
 
-        // Формируем основной контент
-        $ourContent = '
-        <!-- Герой-блок (Баннер) -->
-        <div class="hero-section text-center">
-            <div class="container">
-                <h1 class="display-4 fw-bold">Добро пожаловать на сайт запчастей для всех марок авто!</h1>
-                <p class="lead">Запчасти разных марок в наличии и под заказ.</p>
-                <a href="/catalog" class="btn btn-dark btn-lg mt-3">Каталог</a>
-            </div>
-        </div>
-
-        <div class="container">
-            <div class="row align-items-center mb-5">
-                <div class="col-md-6">
-                    <h2 class="mb-3">Почему выбирают нас?</h2>
-                    <ul class="list-group list-group-flush">
-                        <li class="list-group-item bg-transparent"><i class="bi bi-check-circle-fill text-success"></i> Оригинальные запчасти</li>
-                        <li class="list-group-item bg-transparent"><i class="bi bi-check-circle-fill text-success"></i> Наличие большого количества деталей</li>
-                        <li class="list-group-item bg-transparent"><i class="bi bi-check-circle-fill text-success"></i> Доступные цены</li>
-                    </ul>
-                </div>
-                <div class="col-md-6">
-                    <img src="/assets/img/123.jpg" 
-                         alt="Запчасти" 
-                         class="img-fluid rounded shadow-lg"
-                         onerror="this.src=\'/assets/img/error.jpg\';">
-                </div>
-            </div>
-            
-            <!-- 👇 Секция с товарами -->
-            <div class="row mb-5">
-                <div class="col-12">
-                    <h2 class="text-center mb-4">Каталог</h2>
-                    ' . $productsHtml . '
-                </div>
-            </div>
-        </div>
-        ';
+        // Подключаем шаблон
+        ob_start();
+        include self::TEMPLATE_PATH;
+        $content = ob_get_clean();
         
-        return parent::getTemplate($ourContent);
+        return parent::getTemplate($content);
     }
     
     /**
@@ -71,7 +42,6 @@ class HomeTemplate extends BaseTemplate
         $html = '<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">';
         
         foreach ($products as $product) {
-            // Экранируем вывод для безопасности
             $name = htmlspecialchars($product['name'] ?? 'Без названия');
             $description = htmlspecialchars($product['description'] ?? '');
             $price = number_format($product['price'] ?? 0, 0, '.', ' ');

@@ -6,6 +6,11 @@ require_once __DIR__ . '/BaseTemplate.php';
 class CatalogTemplate extends BaseTemplate
 {
     /**
+     * Путь к файлу шаблона
+     */
+    private const TEMPLATE_PATH = __DIR__ . '/templates/catalog.html.php';
+
+    /**
      * Метод должен совпадать с родителем (принимает строку)
      */
     public static function getTemplate(string $content): string 
@@ -24,45 +29,11 @@ class CatalogTemplate extends BaseTemplate
         $productsGrid = self::renderProductsGrid($products);
         $searchInfo = self::renderSearchInfo(count($products), $search);
 
-        $content = '
-        <div class="container py-5">
-            
-            <!-- Заголовок + Поиск -->
-            <div class="row mb-5">
-                <div class="col-12 text-center">
-                    <h1 class="display-5 fw-bold mb-4 text-white">Каталог товаров</h1>
-                    
-                    <!-- Форма поиска -->
-                    <form method="GET" action="/catalog" class="col-md-6 col-lg-4 mx-auto">
-                        <div class="input-group input-group-lg">
-                            <span class="input-group-text bg-white border-end-0">
-                                <i class="bi bi-search text-muted"></i>
-                            </span>
-                            <input 
-                                type="text" 
-                                name="search" 
-                                class="form-control border-start-0 ps-0" 
-                                placeholder="Поиск товаров..." 
-                                value="' . htmlspecialchars($search) . '"
-                                aria-label="Поиск">
-                            <button class="btn btn-primary px-4" type="submit">Найти</button>
-                        </div>
-                    </form>
-                    
-                    <!-- Результаты поиска -->
-                    ' . $searchInfo . '
-                </div>
-            </div>
-            
-            <!-- Сетка товаров -->
-            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-                ' . $productsGrid . '
-            </div>
-            
-        </div>
-        ';
+        // Подключаем шаблон
+        ob_start();
+        include self::TEMPLATE_PATH;
+        $content = ob_get_clean();
         
-        // Вызываем совместимый метод getTemplate
         return self::getTemplate($content);
     }
     
