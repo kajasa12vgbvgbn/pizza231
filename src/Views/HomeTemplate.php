@@ -15,17 +15,41 @@ class HomeTemplate extends BaseTemplate
      */
     private const TEMPLATE_PATH = __DIR__ . '/templates/home.html.php';
 
+    /**
+     * Путь к файлу с текстами
+     */
+    private const TEXTS_PATH = __DIR__ . '/../../storage/templates/home.json';
+
+    /**
+     * Загружает тексты из JSON файла
+     */
+    private static function loadTexts(): array
+    {
+        $path = self::TEXTS_PATH;
+        if (!file_exists($path)) {
+            return [];
+        }
+        $json = file_get_contents($path);
+        return json_decode($json, true) ?? [];
+    }
+
     public static function getTemplate(string $content = ''): string 
     {
+        // Загружаем тексты
+        $texts = self::loadTexts();
+        
         // Загружаем продукты через модель
         $productModel = new Product();
         $products = $productModel->loadData() ?? [];
         
         // Генерируем HTML для карточек товаров
-        $productsHtml = self::renderProducts($products);
+        $productsHtml = self::renderProducts($products, $texts);
 
         // Показывать ли каталог на главной
         $showCatalog = Config::SHOW_CATALOG_AT_HOME;
+
+        // Передаём тексты в шаблон
+        $texts = $texts;
 
         // Подключаем шаблон
         ob_start();
@@ -38,16 +62,22 @@ class HomeTemplate extends BaseTemplate
     /**
      * Рендерит карточки товаров
      */
-    private static function renderProducts(array $products): string
+    private static function renderProducts(array $products, array $texts = []): string
     {
+        $noProductsText = $texts['catalog']['noProducts'] ?? 'Товары временно отсутствуют';
+        
         if (empty($products)) {
-            return '<p class="text-center text-muted">Товары временно отсутствуют</p>';
+            return '<p class="text-center text-muted">' . htmlspecialchars($noProductsText) . '</p>';
         }
+
+        $noNameText = $texts['catalog']['noName'] ?? 'Без названия';
+        $detailsButton = $texts['catalog']['detailsButton'] ?? 'Подробнее';
+        $currency = $texts['catalog']['currency'] ?? '₽';
 
         $html = '<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">';
         
         foreach ($products as $product) {
-            $name = htmlspecialchars($product['name'] ?? 'Без названия');
+            $name = htmlspecialchars($product['name'] ?? $noNameText);
             $description = htmlspecialchars($product['description'] ?? '');
             $price = number_format($product['price'] ?? 0, 0, '.', ' ');
             $image = htmlspecialchars($product['image'] ?? '/assets/img/no-image.jpg');
@@ -65,8 +95,8 @@ class HomeTemplate extends BaseTemplate
                         <h5 class="card-title">' . $name . '</h5>
                         <p class="card-text text-muted small flex-grow-1">' . $description . '</p>
                         <div class="d-flex justify-content-between align-items-center mt-3">
-                            <span class="h5 mb-0 text-primary">' . $price . ' ₽</span>
-                            <a href="/product/' . $id . '" class="btn btn-outline-primary btn-sm">Подробнее</a>
+                            <span class="h5 mb-0 text-primary">' . $price . ' ' . $currency . '</span>
+                            <a href="/product/' . $id . '" class="btn btn-outline-primary btn-sm">' . htmlspecialchars($detailsButton) . '</a>
                         </div>
                     </div>
                 </div>
