@@ -284,9 +284,66 @@ function initCartPage() {
     
     // Оформление заказа
     document.getElementById('checkout-btn')?.addEventListener('click', function() {
-        CartManager.showToast('🚧 Функция оформления в разработке', 'info');
-        // Здесь можно добавить редирект на форму заказа
-        // window.location.href = '/checkout';
+        // Открывается модальное окно Bootstrap автоматически
+    });
+    
+    // Обработка формы оформления заказа
+    document.getElementById('checkout-form')?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const form = this;
+        const submitBtn = document.getElementById('submit-order');
+        const spinner = submitBtn.querySelector('.spinner-border');
+        const btnText = submitBtn.querySelector('.btn-text');
+        
+        // Блокируем кнопку
+        submitBtn.disabled = true;
+        spinner.classList.remove('d-none');
+        btnText.textContent = 'Отправка...';
+        
+        // Собираем данные формы
+        const formData = {
+            fio: document.getElementById('fio').value,
+            email: document.getElementById('email').value,
+            phone: document.getElementById('phone').value,
+            address: document.getElementById('address').value,
+            payment: document.getElementById('payment').value,
+            items: window.cartData || [],
+            total: window.cartTotal || 0
+        };
+        
+        try {
+            const response = await fetch('/api/cart/order', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(formData)
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                // Закрываем модальное окно
+                const modal = bootstrap.Modal.getInstance(document.getElementById('checkoutModal'));
+                modal.hide();
+                
+                // Показываем успех
+                CartManager.showToast('Заказ #' + result.orderId + ' оформлен!', 'success', false);
+                
+                // Перезагружаем страницу через время
+                setTimeout(() => {
+                    window.location.href = '/cart';
+                }, 2000);
+            } else {
+                CartManager.showToast(result.error || 'Ошибка оформления заказа', 'danger', false);
+            }
+        } catch (error) {
+            CartManager.showToast('Ошибка соединения', 'danger', false);
+        } finally {
+            // Разблокируем кнопку
+            submitBtn.disabled = false;
+            spinner.classList.add('d-none');
+            btnText.textContent = 'Подтвердить заказ';
+        }
     });
 }
 

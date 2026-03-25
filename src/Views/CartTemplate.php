@@ -29,6 +29,7 @@ class CartTemplate extends BaseTemplate
         if ($isEmpty) {
             $cartRows = '';
             $totalFormatted = '0';
+            $cartJson = '[]';
         } else {
             $cartRows = '';
             foreach ($items as $item) {
@@ -69,6 +70,7 @@ class CartTemplate extends BaseTemplate
                 </tr>';
             }
             $totalFormatted = number_format($total, 0, '.', ' ');
+            $cartJson = json_encode($items, JSON_UNESCAPED_UNICODE);
         }
 
         // Подключаем шаблон

@@ -6,12 +6,82 @@ use App\Views\CartTemplate;
 
 class CartController
 {
+    private const ORDERS_FILE = __DIR__ . '/../../storage/orders.json';
+
     /**
      * Отображение страницы корзины
      */
     public function get(): string
     {
         return CartTemplate::render();
+    }
+
+    /**
+     * API: Оформить заказ
+     * @param array $data ['fio', 'email', 'phone', 'address', 'payment', 'items', 'total']
+     */
+    public function order(?array $data): string
+    {
+        if (!$data) {
+            http_response_code(400);
+            return json_encode(['success' => false, 'error' => 'Некорректные данные']);
+        }
+
+        // Валидация обязательных полей
+        $required = ['fio', 'email', 'phone', 'address', 'payment'];
+        foreach ($required as $field) {
+            if (empty($data[$field])) {
+                http_response_code(400);
+                return json_encode(['success' => false, 'error' => 'Заполните все обязательные поля']);
+            }
+        }
+
+        // Получаем товары из корзины
+        $items = Cart::getItems();
+        if (empty($items)) {
+            http_response_code(400);
+            return json_encode(['success' => false, 'error' => 'Корзина пуста']);
+        }
+
+        $total = Cart::getTotal();
+
+        // Создаём заказ
+        $order = [
+            'id' => uniqid('order_'),
+            'date' => date('Y-m-d H:i:s'),
+            'fio' => htmlspecialchars(trim($data['fio'])),
+            'email' => htmlspecialchars(trim($data['email'])),
+            'phone' => htmlspecialchars(trim($data['phone'])),
+            'address' => htmlspecialchars(trim($data['address'])),
+            'payment' => htmlspecialchars($data['payment']),
+            'items' => $items,
+            'total' => $total,
+            'status' => 'new'
+        ];
+
+        // Читаем существующие заказы
+        $orders = [];
+        if (file_exists(self::ORDERS_FILE)) {
+            $content = file_get_contents(self::ORDERS_FILE);
+            $orders = json_decode($content, true) ?: [];
+        }
+
+        // Добавляем новый заказ
+        $orders[] = $order;
+
+        // Сохраняем
+        if (file_put_contents(self::ORDERS_FILE, json_encode($orders, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)) === false) {
+            http_response_code(500);
+            return json_encode(['success' => false, 'error' => 'Ошибка сохранения заказа']);
+        }
+
+        // Очищаем корзину
+        Cart::clear();
+
+        return json_encode([
+            'success' => true,
+            'orderId' => $order['id']
+        ]);
     }
 
     /**

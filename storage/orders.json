@@ -1,0 +1,52 @@
+[
+    {
+        "id": "order_69c3b4bd002b6",
+        "date": "2026-03-25 11:11:09",
+        "fio": "Москвикин",
+        "email": "ivasenkoignat22@gmail.com",
+        "phone": "79235232565",
+        "address": "улица Пушкина",
+        "payment": "cash",
+        "items": [
+            {
+                "id": 2,
+                "name": "Тормозные колодки (передние)",
+                "price": 1850,
+                "image": "\/assets\/img\/2.jpg",
+                "quantity": 2,
+                "added_at": 1774431545
+            },
+            {
+                "id": 1,
+                "name": "Коленвал",
+                "price": 12500,
+                "image": "\/assets\/img\/1.jpg",
+                "quantity": 5,
+                "added_at": 1774432300
+            }
+        ],
+        "total": 66200,
+        "status": "new"
+    },
+    {
+        "id": "order_69c3b4e9b44cb",
+        "date": "2026-03-25 11:11:53",
+        "fio": "Москвикинasfasfa",
+        "email": "ivasenkoignat22@gmail.com",
+        "phone": "79235232565",
+        "address": "улица Пушкина",
+        "payment": "card",
+        "items": [
+            {
+                "id": 1,
+                "name": "Коленвал",
+                "price": 12500,
+                "image": "\/assets\/img\/1.jpg",
+                "quantity": 1,
+                "added_at": 1774433501
+            }
+        ],
+        "total": 12500,
+        "status": "new"
+    }
+]

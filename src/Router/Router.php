@@ -70,6 +70,8 @@ class Router
                             return $cart->remove($input);
                         case 'clear':
                             return $cart->clear();
+                        case 'order':
+                            return $cart->order($input);
                         default:
                             http_response_code(400);
                             return json_encode(['error' => 'Неизвестное действие']);
