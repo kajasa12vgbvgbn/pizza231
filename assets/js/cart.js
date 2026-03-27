@@ -316,6 +316,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Восстановить состояние кнопок на странице каталога
     restoreCatalogButtons();
     
+    // Загрузить информацию о пользователе
+    loadCurrentUser();
+    
     // Обработчики для страницы корзины
     if (document.getElementById('cart-items')) {
         initCartPage();
@@ -535,4 +538,65 @@ function animateButton(button) {
         button.disabled = false;
         button.classList.replace('btn-success', 'btn-light');
     }, 2000);
+}
+
+// Загрузка информации о текущем пользователе
+async function loadCurrentUser() {
+    try {
+        const response = await fetch('/api/auth/current');
+        const data = await response.json();
+        
+        if (data.user) {
+            updateNavbarUser(data.user);
+        } else {
+            updateNavbarUser(null);
+        }
+    } catch (error) {
+        console.log('Не удалось загрузить данные пользователя');
+    }
+}
+
+// Обновление навбара с данными пользователя
+function updateNavbarUser(user) {
+    const navbarNav = document.querySelector('.navbar-nav');
+    if (!navbarNav) return;
+    
+    // Удалить существующие элементы авторизации
+    const existingLogin = navbarNav.querySelector('.nav-item-login');
+    const existingDropdown = navbarNav.querySelector('.nav-item.dropdown');
+    
+    if (existingLogin) existingLogin.remove();
+    if (existingDropdown) existingDropdown.remove();
+    
+    // Найти последний элемент перед концом
+    const navItems = navbarNav.querySelectorAll('.nav-item');
+    const lastNavItem = navItems[navItems.length - 1];
+    
+    if (user) {
+        // Добавить выпадающий список с именем пользователя
+        const dropdown = document.createElement('li');
+        dropdown.className = 'nav-item dropdown';
+        dropdown.innerHTML = `
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                <i class="bi bi-person-circle me-1"></i>
+                ${user.name}
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><span class="dropdown-item-text text-muted small">${user.email}</span></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item text-danger" href="/logout">Выйти</a></li>
+            </ul>
+        `;
+        navbarNav.appendChild(dropdown);
+    } else {
+        // Добавить ссылку "Вход"
+        const loginItem = document.createElement('li');
+        loginItem.className = 'nav-item nav-item-login';
+        loginItem.innerHTML = `
+            <a class="nav-link" href="/login">
+                <i class="bi bi-person me-1"></i>Вход
+            </a>
+        `;
+        navbarNav.appendChild(loginItem);
+    }
 }

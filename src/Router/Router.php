@@ -11,11 +11,16 @@ require_once __DIR__ . '/../Controllers/CatalogController.php';
 require_once __DIR__ . '/../Models/Cart.php';
 require_once __DIR__ . '/../Controllers/CartController.php';
 
+// 👇 НОВЫЕ: Контроллер авторизации
+require_once __DIR__ . '/../Models/User.php';
+require_once __DIR__ . '/../Controllers/AuthController.php';
+
 use App\Controllers\HomeController;
 use App\Controllers\AboutController;
 use App\Controllers\ProductController;
 use App\Controllers\CatalogController;
-use App\Controllers\CartController; // 👈 Новый контроллер
+use App\Controllers\CartController;
+use App\Controllers\AuthController;
 
 class Router
 {
@@ -49,6 +54,19 @@ class Router
             case "cart":
                 $cart = new CartController();
                 return $cart->get(); // Страница корзины
+                
+            // 👇 НОВЫЕ МАРШРУТЫ ДЛЯ АВТОРИЗАЦИИ
+            case "register":
+                $auth = new AuthController();
+                return $auth->register();
+            
+            case "login":
+                $auth = new AuthController();
+                return $auth->login();
+            
+            case "logout":
+                $auth = new AuthController();
+                return $auth->logout();
                 
             case "api":
                 // Обработка API-запросов
@@ -86,6 +104,27 @@ class Router
                             return json_encode(['error' => 'Неизвестное действие']);
                     }
                 }
+                
+                // API авторизации
+                if ($subResource === 'auth') {
+                    $auth = new AuthController();
+                    $action = $pieces[3] ?? '';
+                    
+                    switch ($action) {
+                        case 'register':
+                            return $auth->apiRegister();
+                        case 'login':
+                            return $auth->apiLogin();
+                        case 'logout':
+                            return $auth->apiLogout();
+                        case 'current':
+                            return $auth->apiGetCurrent();
+                        default:
+                            http_response_code(400);
+                            return json_encode(['error' => 'Неизвестное действие']);
+                    }
+                }
+                
                 // Если не наш под маршрут — 404
                 http_response_code(404);
                 return json_encode(['error' => 'API endpoint not found']);
