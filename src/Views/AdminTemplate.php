@@ -101,146 +101,130 @@ class AdminTemplate extends BaseTemplate
     }
     
     /**
-     * Рендер страницы заказов
+     * Рендер страницы заказов с вкладками
      */
     public static function renderOrders(array $orders): string
     {
-        $ordersHtml = '';
+        // Разделяем заказы
+        $activeOrders = array_filter($orders, fn($o) => in_array($o['status'] ?? 'new', ['new', 'processing']));
+        $completedOrders = array_filter($orders, fn($o) => in_array($o['status'] ?? '', ['completed', 'cancelled']));
         
-        if (empty($orders)) {
-            $ordersHtml = '
-            <tr>
-                <td colspan="7" class="text-center py-4 text-muted">
-                    <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                    Заказов пока нет
-                </td>
-            </tr>';
-        } else {
-            foreach ($orders as $order) {
-                $id = $order['id'] ?? '—';
-                $fio = htmlspecialchars($order['fio'] ?? '—');
-                $phone = htmlspecialchars($order['phone'] ?? '—');
-                $total = number_format($order['total'] ?? 0, 0, '.', ' ');
-                $status = $order['status'] ?? 'new';
-                $createdAt = !empty($order['created_at']) ? date('d.m.Y H:i', strtotime($order['created_at'])) : '—';
-                
-                $statusBadge = match($status) {
-                    'new' => '<span class="badge bg-primary">Новый</span>',
-                    'processing' => '<span class="badge bg-warning">В обработке</span>',
-                    'completed' => '<span class="badge bg-success">Выполнен</span>',
-                    'cancelled' => '<span class="badge bg-danger">Отменён</span>',
-                    default => '<span class="badge bg-secondary">' . htmlspecialchars($status) . '</span>'
-                };
-                
-                $itemsCount = count($order['items'] ?? []);
-                
-                // Кнопки действий
-                $actions = '';
-                if ($status === 'new' || $status === 'processing') {
-                    $actions .= '<button class="btn btn-sm btn-success me-1 btn-complete-order" data-id="' . $id . '" title="Завершить"><i class="bi bi-check-lg"></i></button>';
-                }
-                if ($status !== 'completed' && $status !== 'cancelled') {
-                    $actions .= '<button class="btn btn-sm btn-danger btn-cancel-order" data-id="' . $id . '" title="Отменить"><i class="bi bi-x-lg"></i></button>';
-                }
-                
-                $ordersHtml .= '
-                <tr>
-                    <td>
-                        <button class="btn btn-link text-decoration-none btn-view-order" data-id="' . $id . '">
-                            #' . $id . '
-                        </button>
-                    </td>
-                    <td>' . $fio . '<br><small class="text-muted">' . $phone . '</small></td>
-                    <td>' . $itemsCount . ' товар(ов)</td>
-                    <td class="fw-bold">' . $total . ' ₽</td>
-                    <td>' . $statusBadge . '</td>
-                    <td>' . $createdAt . '</td>
-                    <td>' . $actions . '</td>
-                </tr>';
-            }
-        }
+        $activeCount = count($activeOrders);
+        $completedCount = count($completedOrders);
         
         $content = '
         <div class="container py-4">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h1 class="mb-0">Заказы</h1>
-                <a href="/admin" class="btn btn-outline-secondary">Назад в панель</a>
+                <a href="/admin" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i>Назад
+                </a>
             </div>
             
-            <div class="card">
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Клиент</th>
-                                    <th>Товары</th>
-                                    <th>Сумма</th>
-                                    <th>Статус</th>
-                                    <th>Дата</th>
-                                    <th>Действия</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ' . $ordersHtml . '
-                            </tbody>
-                        </table>
-                    </div>
+            <!-- Вкладки -->
+            <ul class="nav nav-tabs mb-4" id="ordersTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="active-tab" data-bs-toggle="tab" data-bs-target="#active-orders" type="button" role="tab">
+                        <i class="bi bi-clock-history me-1"></i>Активные
+                        <span class="badge bg-danger ms-2">' . $activeCount . '</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="completed-tab" data-bs-toggle="tab" data-bs-target="#completed-orders" type="button" role="tab">
+                        <i class="bi bi-check2-circle me-1"></i>Завершённые
+                        <span class="badge bg-secondary ms-2">' . $completedCount . '</span>
+                    </button>
+                </li>
+            </ul>
+            
+            <div class="tab-content" id="ordersTabsContent">
+                <!-- Активные заказы -->
+                <div class="tab-pane fade show active" id="active-orders" role="tabpanel">
+                    ' . self::renderOrdersList($activeOrders, true) . '
+                </div>
+                
+                <!-- Завершённые заказы -->
+                <div class="tab-pane fade" id="completed-orders" role="tabpanel">
+                    ' . self::renderOrdersList($completedOrders, false) . '
                 </div>
             </div>
         </div>
         
         <!-- Модальное окно просмотра заказа -->
         <div class="modal fade" id="orderModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-lg">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
                 <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Заказ #<span id="orderModalId"></span></h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">
+                            <i class="bi bi-receipt me-2"></i>Заказ #<span id="orderModalId"></span>
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Закрыть"></button>
                     </div>
                     <div class="modal-body">
-                        <div class="row mb-4">
+                        <div class="row g-3 mb-4">
                             <div class="col-md-6">
-                                <h6 class="text-muted mb-2">Информация о клиенте</h6>
-                                <p class="mb-1"><strong>ФИО:</strong> <span id="orderModalFio"></span></p>
-                                <p class="mb-1"><strong>Email:</strong> <span id="orderModalEmail"></span></p>
-                                <p class="mb-1"><strong>Телефон:</strong> <span id="orderModalPhone"></span></p>
-                                <p class="mb-0"><strong>Адрес:</strong> <span id="orderModalAddress"></span></p>
+                                <div class="card h-100 border-0 bg-light">
+                                    <div class="card-body">
+                                        <h6 class="text-muted mb-3">
+                                            <i class="bi bi-person me-1"></i>Клиент
+                                        </h6>
+                                        <p class="mb-2"><strong>ФИО:</strong> <span id="orderModalFio"></span></p>
+                                        <p class="mb-2"><strong>Email:</strong> <span id="orderModalEmail"></span></p>
+                                        <p class="mb-2"><strong>Телефон:</strong> <span id="orderModalPhone"></span></p>
+                                        <p class="mb-0"><strong>Адрес:</strong> <span id="orderModalAddress"></span></p>
+                                    </div>
+                                </div>
                             </div>
                             <div class="col-md-6">
-                                <h6 class="text-muted mb-2">Информация о заказе</h6>
-                                <p class="mb-1"><strong>Дата:</strong> <span id="orderModalDate"></span></p>
-                                <p class="mb-1"><strong>Статус:</strong> <span id="orderModalStatus"></span></p>
-                                <p class="mb-0"><strong>Оплата:</strong> <span id="orderModalPayment"></span></p>
+                                <div class="card h-100 border-0 bg-light">
+                                    <div class="card-body">
+                                        <h6 class="text-muted mb-3">
+                                            <i class="bi bi-info-circle me-1"></i>Детали
+                                        </h6>
+                                        <p class="mb-2"><strong>Дата:</strong> <span id="orderModalDate"></span></p>
+                                        <p class="mb-2"><strong>Статус:</strong> <span id="orderModalStatus"></span></p>
+                                        <p class="mb-0"><strong>Оплата:</strong> <span id="orderModalPayment"></span></p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <h6 class="text-muted mb-2">Товары</h6>
-                        <div class="table-responsive">
-                            <table class="table table-sm">
-                                <thead>
-                                    <tr>
-                                        <th>Товар</th>
-                                        <th>Цена</th>
-                                        <th>Кол-во</th>
-                                        <th>Сумма</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="orderModalItems">
-                                </tbody>
-                                <tfoot>
-                                    <tr>
-                                        <th colspan="3" class="text-end">Итого:</th>
-                                        <th class="fw-bold" id="orderModalTotal"></th>
-                                    </tr>
-                                </tfoot>
-                            </table>
+                        
+                        <h6 class="text-muted mb-3">
+                            <i class="bi bi-box-seam me-1"></i>Товары
+                        </h6>
+                        <div class="card border-0 shadow-sm">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width: 50%">Товар</th>
+                                            <th>Цена</th>
+                                            <th>Кол-во</th>
+                                            <th class="text-end">Сумма</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="orderModalItems">
+                                    </tbody>
+                                    <tfoot class="table-light">
+                                        <tr>
+                                            <th colspan="3" class="text-end">Итого:</th>
+                                            <th class="text-end text-success" id="orderModalTotal"></th>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
-                        <button type="button" class="btn btn-success" id="btnCompleteOrder">Завершить заказ</button>
-                        <button type="button" class="btn btn-danger" id="btnCancelOrder">Отменить заказ</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-lg me-1"></i>Закрыть
+                        </button>
+                        <button type="button" class="btn btn-success" id="btnCompleteOrder">
+                            <i class="bi bi-check-lg me-1"></i>Завершить
+                        </button>
+                        <button type="button" class="btn btn-outline-danger" id="btnCancelOrder">
+                            <i class="bi bi-x-lg me-1"></i>Отменить
+                        </button>
                     </div>
                 </div>
             </div>
@@ -251,6 +235,25 @@ class AdminTemplate extends BaseTemplate
             let currentOrderId = null;
             let currentOrderStatus = null;
             const orders = ' . json_encode($orders, JSON_UNESCAPED_UNICODE) . ';
+            
+            // Функция для получения даты
+            function getOrderDate(order) {
+                return order.created_at || order.date || null;
+            }
+            
+            // Функция форматирования даты
+            function formatDate(dateStr) {
+                if (!dateStr) return "—";
+                const date = new Date(dateStr);
+                if (isNaN(date.getTime())) return "—";
+                return date.toLocaleString("ru-RU", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit"
+                });
+            }
             
             // Открытие модального окна
             document.querySelectorAll(".btn-view-order").forEach(btn => {
@@ -267,29 +270,30 @@ class AdminTemplate extends BaseTemplate
                     document.getElementById("orderModalEmail").textContent = order.email || "—";
                     document.getElementById("orderModalPhone").textContent = order.phone || "—";
                     document.getElementById("orderModalAddress").textContent = order.address || "—";
-                    document.getElementById("orderModalDate").textContent = order.created_at ? new Date(order.created_at).toLocaleString("ru-RU") : "—";
+                    document.getElementById("orderModalDate").textContent = formatDate(getOrderDate(order));
                     document.getElementById("orderModalPayment").textContent = order.payment === "cash" ? "Наличными" : "Картой";
                     
-                    const statusText = {
-                        "new": "<span class=\\"badge bg-primary\\">Новый</span>",
-                        "processing": "<span class=\\"badge bg-warning\\">В обработке</span>",
-                        "completed": "<span class=\\"badge bg-success\\">Выполнен</span>",
-                        "cancelled": "<span class=\\"badge bg-danger\\">Отменён</span>"
+                    const statusMap = {
+                        "new": {text: "Новый", class: "bg-primary"},
+                        "processing": {text: "В обработке", class: "bg-warning text-dark"},
+                        "completed": {text: "Выполнен", class: "bg-success"},
+                        "cancelled": {text: "Отменён", class: "bg-danger"}
                     };
-                    document.getElementById("orderModalStatus").innerHTML = statusText[order.status] || order.status;
+                    const status = statusMap[order.status] || {text: order.status, class: "bg-secondary"};
+                    document.getElementById("orderModalStatus").innerHTML = `<span class="badge ${status.class}">${status.text}</span>`;
                     
                     // Товары
                     const itemsHtml = order.items.map(item => `
                         <tr>
                             <td>
                                 <div class="d-flex align-items-center">
-                                    <img src="${item.image || "/assets/img/no-image.jpg"}" alt="" width="40" height="40" class="me-2" style="object-fit: cover;">
-                                    ${item.name}
+                                    <img src="${item.image || "/assets/img/no-image.jpg"}" alt="" width="40" height="40" class="rounded me-2" style="object-fit: cover;">
+                                    <span>${item.name}</span>
                                 </div>
                             </td>
                             <td>${new Intl.NumberFormat("ru-RU").format(item.price)} ₽</td>
-                            <td>${item.quantity}</td>
-                            <td>${new Intl.NumberFormat("ru-RU").format(item.price * item.quantity)} ₽</td>
+                            <td>× ${item.quantity}</td>
+                            <td class="text-end">${new Intl.NumberFormat("ru-RU").format(item.price * item.quantity)} ₽</td>
                         </tr>
                     `).join("");
                     document.getElementById("orderModalItems").innerHTML = itemsHtml;
@@ -328,13 +332,15 @@ class AdminTemplate extends BaseTemplate
             
             // Кнопки в таблице
             document.querySelectorAll(".btn-complete-order").forEach(btn => {
-                btn.addEventListener("click", function() {
+                btn.addEventListener("click", function(e) {
+                    e.stopPropagation();
                     updateOrderStatus(this.dataset.id, "completed");
                 });
             });
             
             document.querySelectorAll(".btn-cancel-order").forEach(btn => {
-                btn.addEventListener("click", function() {
+                btn.addEventListener("click", function(e) {
+                    e.stopPropagation();
                     if (confirm("Вы уверены, что хотите отменить этот заказ?")) {
                         updateOrderStatus(this.dataset.id, "cancelled");
                     }
@@ -363,6 +369,93 @@ class AdminTemplate extends BaseTemplate
         </script>';
         
         return parent::getTemplate($content);
+    }
+    
+    /**
+     * Рендер списка заказов
+     */
+    private static function renderOrdersList(array $orders, bool $showActions): string
+    {
+        if (empty($orders)) {
+            return '
+            <div class="text-center py-5">
+                <i class="bi bi-inbox fs-1 text-muted mb-3 d-block"></i>
+                <h5 class="text-muted">Заказов нет</h5>
+            </div>';
+        }
+        
+        $html = '';
+        
+        foreach ($orders as $order) {
+            $id = $order['id'] ?? '—';
+            $fio = htmlspecialchars($order['fio'] ?? '—');
+            $phone = htmlspecialchars($order['phone'] ?? '—');
+            $total = number_format($order['total'] ?? 0, 0, '.', ' ');
+            $status = $order['status'] ?? 'new';
+            
+            // Пробуем обе даты
+            $dateStr = $order['created_at'] ?? $order['date'] ?? '';
+            $createdAt = !empty($dateStr) ? date('d.m.Y H:i', strtotime($dateStr)) : '—';
+            
+            $statusBadge = match($status) {
+                'new' => '<span class="badge bg-primary">Новый</span>',
+                'processing' => '<span class="badge bg-warning text-dark">В обработке</span>',
+                'completed' => '<span class="badge bg-success">Выполнен</span>',
+                'cancelled' => '<span class="badge bg-danger">Отменён</span>',
+                default => '<span class="badge bg-secondary">' . htmlspecialchars($status) . '</span>'
+            };
+            
+            $itemsCount = count($order['items'] ?? []);
+            
+            // Кнопки действий
+            $actions = '';
+            if ($showActions && ($status === 'new' || $status === 'processing')) {
+                $actions = '
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-success btn-complete-order" data-id="' . $id . '" title="Завершить">
+                        <i class="bi bi-check-lg"></i>
+                    </button>
+                    <button class="btn btn-danger btn-cancel-order" data-id="' . $id . '" title="Отменить">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>';
+            }
+            
+            $html .= '
+            <div class="card mb-3 shadow-sm order-card" style="cursor: pointer;">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-1">
+                            <button class="btn btn-link text-decoration-none fw-bold btn-view-order" data-id="' . $id . '">
+                                #' . substr($id, -8) . '
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="fw-medium">' . $fio . '</div>
+                            <small class="text-muted">' . $phone . '</small>
+                        </div>
+                        <div class="col-md-2">
+                            <small class="text-muted d-block">Товаров</small>
+                            <strong>' . $itemsCount . '</strong>
+                        </div>
+                        <div class="col-md-2">
+                            <small class="text-muted d-block">Сумма</small>
+                            <strong class="text-success">' . $total . ' ₽</strong>
+                        </div>
+                        <div class="col-md-2">
+                            <small class="text-muted d-block">Статус</small>
+                            <div>' . $statusBadge . '</div>
+                        </div>
+                        <div class="col-md-2">
+                            <small class="text-muted d-block">Дата</small>
+                            <small>' . $createdAt . '</small>
+                        </div>
+                    </div>
+                </div>
+            </div>';
+        }
+        
+        return $html;
     }
     
     /**

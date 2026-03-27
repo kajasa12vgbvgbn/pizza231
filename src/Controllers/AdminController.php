@@ -111,7 +111,7 @@ class AdminController
      */
     private function getOrders(): array
     {
-        $file = '.\storage\orders.json';
+        $file = __DIR__ . '/../../storage/orders.json';
         
         if (!file_exists($file)) {
             return [];
@@ -126,7 +126,9 @@ class AdminController
         
         // Сортировка по дате (новые первые)
         usort($orders, function($a, $b) {
-            return strtotime($b['created_at'] ?? '') - strtotime($a['created_at'] ?? '');
+            $dateA = $a['created_at'] ?? $a['date'] ?? '';
+            $dateB = $b['created_at'] ?? $b['date'] ?? '';
+            return strtotime($dateB) - strtotime($dateA);
         });
         
         return $orders;

@@ -137,5 +137,48 @@
         "total": 11100,
         "status": "completed",
         "completed_at": "2026-03-27 08:15:38"
+    },
+    {
+        "id": "order_69c630a99220c",
+        "created_at": "2026-03-27 08:24:25",
+        "fio": "Москвикинasfasfa",
+        "email": "ivasenkoignat22@gmail.com",
+        "phone": "79235232565",
+        "address": "улица Пушкина",
+        "payment": "cash",
+        "items": [
+            {
+                "id": 1,
+                "name": "Коленвал",
+                "price": 12500,
+                "image": "\/assets\/img\/1.jpg",
+                "quantity": 1,
+                "added_at": 1774596259
+            }
+        ],
+        "total": 12500,
+        "status": "completed",
+        "completed_at": "2026-03-27 08:24:34"
+    },
+    {
+        "id": "order_69c630c0526ce",
+        "created_at": "2026-03-27 08:24:48",
+        "fio": "Москвикинasfasfa",
+        "email": "ivasenkoignat22@gmail.com",
+        "phone": "79235232565",
+        "address": "улица Пушкина",
+        "payment": "cash",
+        "items": [
+            {
+                "id": 2,
+                "name": "Тормозные колодки (передние)",
+                "price": 1850,
+                "image": "\/assets\/img\/2.jpg",
+                "quantity": 1,
+                "added_at": 1774596281
+            }
+        ],
+        "total": 1850,
+        "status": "cancelled"
     }
 ]
