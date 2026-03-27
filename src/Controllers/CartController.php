@@ -2,9 +2,11 @@
 namespace App\Controllers;
 
 require_once __DIR__ . '/../Models/Cart.php';
+require_once __DIR__ . '/../Models/EmailSender.php';
 require_once __DIR__ . '/../Views/CartTemplate.php';
 
 use App\Models\Cart;
+use App\Models\EmailSender;
 use App\Views\CartTemplate;
 
 class CartController
@@ -84,10 +86,21 @@ class CartController
         // Добавляем новый заказ
         $orders[] = $order;
 
-        // Сохраняем
+// Сохраняем
         if (file_put_contents(self::ORDERS_FILE, json_encode($orders, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)) === false) {
             http_response_code(500);
             return json_encode(['success' => false, 'error' => 'Ошибка сохранения заказа']);
+        }
+        
+        // Отправляем email-уведомление
+        try {
+            $emailSent = EmailSender::sendOrderNotification($order, $order['email']);
+            if (!$emailSent) {
+                // Логируем, но не прерываем выполнение
+                error_log('Не удалось отправить email-уведомление для заказа ' . $order['id']);
+            }
+        } catch (\Exception $e) {
+            error_log('Ошибка при отправке email: ' . $e->getMessage());
         }
         
         // Очищаем корзину

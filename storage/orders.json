@@ -123,5 +123,27 @@
         "total": 14800,
         "status": "new",
         "user_id": 2
+    },
+    {
+        "id": "order_69c6596d225c3",
+        "created_at": "2026-03-27 11:18:21",
+        "fio": "Саша",
+        "email": "moscvicin2007@gmail.com",
+        "phone": "79235232565",
+        "address": "улица Пушкина",
+        "payment": "cash",
+        "items": [
+            {
+                "id": 1,
+                "name": "Коленвал",
+                "price": 12500,
+                "image": "\/assets\/img\/1.jpg",
+                "quantity": 1,
+                "added_at": 1774606695
+            }
+        ],
+        "total": 12500,
+        "status": "new",
+        "user_id": 4
     }
 ]
