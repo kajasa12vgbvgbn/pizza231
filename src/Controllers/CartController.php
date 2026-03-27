@@ -51,7 +51,7 @@ class CartController
         // Создаём заказ
         $order = [
             'id' => uniqid('order_'),
-            'date' => date('Y-m-d H:i:s'),
+            'created_at' => date('Y-m-d H:i:s'),
             'fio' => htmlspecialchars(trim($data['fio'])),
             'email' => htmlspecialchars(trim($data['email'])),
             'phone' => htmlspecialchars(trim($data['phone'])),
@@ -168,5 +168,53 @@ class CartController
             'count' => 0,
             'total' => 0
         ]);
+    }
+    
+    /**
+     * API: Изменить статус заказа (закрыть/открыть)
+     * @param array $data ['id', 'status']
+     */
+    public function updateStatus(?array $data): string
+    {
+        if (!$data || !isset($data['id'], $data['status'])) {
+            http_response_code(400);
+            return json_encode(['success' => false, 'error' => 'Некорректные данные']);
+        }
+        
+        $orderId = $data['id'];
+        $newStatus = $data['status'];
+        
+        // Читаем заказы
+        $orders = [];
+        if (file_exists(self::ORDERS_FILE)) {
+            $content = file_get_contents(self::ORDERS_FILE);
+            $orders = json_decode($content, true) ?: [];
+        }
+        
+        // Ищем и обновляем заказ
+        $found = false;
+        foreach ($orders as &$order) {
+            if ($order['id'] === $orderId) {
+                $order['status'] = $newStatus;
+                if ($newStatus === 'completed') {
+                    $order['completed_at'] = date('Y-m-d H:i:s');
+                }
+                $found = true;
+                break;
+            }
+        }
+        
+        if (!$found) {
+            http_response_code(404);
+            return json_encode(['success' => false, 'error' => 'Заказ не найден']);
+        }
+        
+        // Сохраняем
+        if (file_put_contents(self::ORDERS_FILE, json_encode($orders, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)) === false) {
+            http_response_code(500);
+            return json_encode(['success' => false, 'error' => 'Ошибка сохранения']);
+        }
+        
+        return json_encode(['success' => true]);
     }
 }
