@@ -1,0 +1,59 @@
+{
+    "dashboard": {
+        "title": "Панель администратора",
+        "users": "Пользователи",
+        "products": "Товары",
+        "orders": "Заказы",
+        "revenue": "Выручка"
+    },
+    "orders": {
+        "title": "Заказы",
+        "back": "Назад",
+        "active": "Активные",
+        "completed": "Завершённые",
+        "noOrders": "Заказов нет",
+        "customer": "Клиент",
+        "fio": "ФИО:",
+        "email": "Email:",
+        "phone": "Телефон:",
+        "address": "Адрес:",
+        "details": "Детали",
+        "date": "Дата:",
+        "status": "Статус:",
+        "payment": "Опыта:",
+        "items": "Товары",
+        "item": "Товар",
+        "price": "Цена",
+        "quantity": "Кол-во",
+        "sum": "Сумма",
+        "total": "Итого:",
+        "close": "Закрыть",
+        "complete": "Завершить",
+        "cancel": "Отменить",
+        "products": "Товаров",
+        "amount": "Сумма",
+        "statusNew": "Новый",
+        "statusProcessing": "В обработке",
+        "statusCompleted": "Выполнен",
+        "statusCancelled": "Отменён",
+        "paymentCash": "Наличными",
+        "paymentCard": "Картой"
+    },
+    "users": {
+        "title": "Пользователи",
+        "back": "Назад в панель",
+        "id": "ID",
+        "name": "Имя",
+        "email": "Email",
+        "registered": "Дата регистрации",
+        "noUsers": "Пользователей пока нет"
+    },
+    "cards": {
+        "ordersTitle": "Управление заказами",
+        "ordersDesc": "Просмотр и управление заказами клиентов",
+        "ordersLink": "Перейти к заказам",
+        "usersTitle": "Управление пользователями",
+        "usersDesc": "Просмотр списка зарегистрированных пользователей",
+        "usersLink": "Перейти к пользователям"
+    }
+}
