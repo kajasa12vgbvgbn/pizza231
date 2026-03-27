@@ -5,15 +5,24 @@
  * - $search - текущий поисковый запрос
  * - $searchInfo - HTML с информацией о результатах поиска
  * - $productsGrid - HTML сетки товаров
+ * - $texts - массив текстов из storage/templates/catalog.json
  */
+
+// Значения по умолчанию
+$texts = $texts ?? [];
+$pageTitle = $texts['pageTitle'] ?? 'Каталог товаров';
+$titleText = $texts['title'] ?? 'Каталог товаров';
+$searchText = $texts['search'] ?? [];
+$toastText = $texts['toast'] ?? [];
+$modalText = $texts['modal'] ?? [];
 ?>
 
 <div class="container py-5">
     <!-- Заголовок + Поиск -->
     <div class="row mb-5">
         <div class="col-12 text-center">
-            <h1 class="display-5 fw-bold mb-4">Каталог товаров</h1>
-            
+            <h1 class="display-5 fw-bold mb-4"><?= htmlspecialchars($titleText) ?></h1>
+
             <!-- Форма поиска -->
             <form method="GET" action="/catalog" class="col-md-6 col-lg-4 mx-auto">
                 <div class="input-group input-group-lg">
@@ -24,10 +33,10 @@
                         type="text" 
                         name="search" 
                         class="form-control border-start-0 ps-0" 
-                        placeholder="Поиск товаров..." 
+                        placeholder="<?= htmlspecialchars($searchText['placeholder'] ?? 'Поиск товаров...') ?>"
                         value="<?= htmlspecialchars($search) ?>"
                         aria-label="Поиск">
-                    <button class="btn btn-primary px-4" type="submit">Найти</button>
+                    <button class="btn btn-primary px-4" type="submit"><?= htmlspecialchars($searchText['button'] ?? 'Найти') ?></button>
                 </div>
             </form>
             
@@ -54,7 +63,7 @@
     </video>
     
     <div class="toast-message" id="fullscreenToastMessage">
-        🎉 Товар добавлен в корзину!
+        <?= htmlspecialchars($toastText['addedWithEmoji'] ?? '🎉 Товар добавлен в корзину!') ?>
     </div>
 </div>
 
@@ -64,7 +73,7 @@
         <div class="d-flex">
             <div class="toast-body">
                 <i class="bi bi-check-circle-fill me-2"></i>
-                <span id="toastMessage">Товар добавлен в корзину!</span>
+                <span id="toastMessage"><?= htmlspecialchars($toastText['added'] ?? 'Товар добавлен в корзину!') ?></span>
             </div>
             <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
         </div>

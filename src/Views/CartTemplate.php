@@ -10,18 +10,39 @@ class CartTemplate extends BaseTemplate
      */
     private const TEMPLATE_PATH = __DIR__ . '/templates/cart.html.php';
 
+    /**
+     * Путь к файлу с текстами
+     */
+    private const TEXTS_PATH = __DIR__ . '/../../storage/templates/cart.json';
+
+    /**
+     * Загружает тексты из JSON файла
+     */
+    private static function loadTexts(): array
+    {
+        $path = self::TEXTS_PATH;
+        if (!file_exists($path)) {
+            return [];
+        }
+        $json = file_get_contents($path);
+        return json_decode($json, true) ?? [];
+    }
+
     public static function render(): string
     {
+        // Загружаем тексты
+        $texts = self::loadTexts();
+
         $cartItems = Cart::getItems();
         $total = Cart::getTotal();
         $count = Cart::getCount();
-        
-        $content = self::renderCartContent($cartItems, $total, $count);
-        
+
+        $content = self::renderCartContent($cartItems, $total, $count, $texts);
+
         return parent::getTemplate($content);
     }
-    
-    private static function renderCartContent(array $items, float $total, int $count): string
+
+    private static function renderCartContent(array $items, float $total, int $count, array $texts = []): string
     {
         // Подготовка переменных для шаблона
         $isEmpty = empty($items);
@@ -73,7 +94,7 @@ class CartTemplate extends BaseTemplate
             $cartJson = json_encode($items, JSON_UNESCAPED_UNICODE);
         }
 
-        // Подключаем шаблон
+        // Подключаем шаблон (тексты доступны через замыкание)
         ob_start();
         include self::TEMPLATE_PATH;
         return ob_get_clean();

@@ -7,7 +7,13 @@
  * - $email - email
  * - $director - директор
  * - $mapId - ID Яндекс.Карты
+ * - $texts - массив текстов из storage/templates/about.json
  */
+
+// Значения по умолчанию
+$texts = $texts ?? [];
+$historyText = $texts['history'] ?? [];
+$contactsText = $texts['contacts'] ?? [];
 ?>
 
 <div class="container mt-4">

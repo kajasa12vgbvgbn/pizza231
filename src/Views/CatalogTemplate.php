@@ -11,6 +11,24 @@ class CatalogTemplate extends BaseTemplate
     private const TEMPLATE_PATH = __DIR__ . '/templates/catalog.html.php';
 
     /**
+     * Путь к файлу с текстами
+     */
+    private const TEXTS_PATH = __DIR__ . '/../../storage/templates/catalog.json';
+
+    /**
+     * Загружает тексты из JSON файла
+     */
+    private static function loadTexts(): array
+    {
+        $path = self::TEXTS_PATH;
+        if (!file_exists($path)) {
+            return [];
+        }
+        $json = file_get_contents($path);
+        return json_decode($json, true) ?? [];
+    }
+
+    /**
      * Метод должен совпадать с родителем (принимает строку)
      */
     public static function getTemplate(string $content): string 
@@ -25,9 +43,12 @@ class CatalogTemplate extends BaseTemplate
      */
     public static function render(array $products = [], string $search = ''): string
     {
+        // Загружаем тексты
+        $texts = self::loadTexts();
+
         // Генерируем HTML контента
-        $productsGrid = self::renderProductsGrid($products);
-        $searchInfo = self::renderSearchInfo(count($products), $search);
+        $productsGrid = self::renderProductsGrid($products, $texts);
+        $searchInfo = self::renderSearchInfo(count($products), $search, $texts);
 
         // Подключаем шаблон
         ob_start();
@@ -40,11 +61,17 @@ class CatalogTemplate extends BaseTemplate
     /**
      * Рендерит сетку карточек товаров
      */
-    private static function renderProductsGrid(array $products): string
+    private static function renderProductsGrid(array $products, array $texts = []): string
     {
+        $productText = $texts['product'] ?? [];
+
         if (empty($products)) {
-            return self::renderEmptyState();
+            return self::renderEmptyState($texts);
         }
+        
+        $addToCartText = $productText['addToCart'] ?? 'В корзину';
+        $detailsText = $productText['details'] ?? 'Подробнее';
+        $inStockText = $productText['inStock'] ?? 'В наличии';
 
         $html = '';
         
@@ -77,7 +104,7 @@ class CatalogTemplate extends BaseTemplate
                              alt="' . $name . '"
                              style="height: 220px; object-fit: contain;"
                              onerror="this.src=\'/assets/img/no-image.jpg\';">
-                        <span class="badge bg-success position-absolute top-0 end-0 m-3">В наличии</span>
+                        <span class="badge bg-success position-absolute top-0 end-0 m-3">' . htmlspecialchars($inStockText) . '</span>
                     </div>
                     <div class="card-body d-flex flex-column">
                         <h5 class="card-title fw-bold">' . $name . '</h5>
@@ -94,7 +121,7 @@ class CatalogTemplate extends BaseTemplate
                                         <path d="M9 5.5a.5.5 0 0 0-1 0V7H6.5a.5.5 0 0 0 0 1H8v1.5a.5.5 0 0 0 1 0V8h1.5a.5.5 0 0 0 0-1H9z"/>
                                         <path d="M.5 1a.5.5 0 0 0 0 1h1.11l.401 1.607 1.498 7.985A.5.5 0 0 0 4 12h1a2 2 0 1 0 0 4 2 2 0 0 0 0-4h7a2 2 0 1 0 0 4 2 2 0 0 0 0-4h1a.5.5 0 0 0 .491-.408l1.5-8A.5.5 0 0 0 14.5 3H2.89l-.405-1.621A.5.5 0 0 0 2 1zM6 14a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm7 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
                                     </svg>
-                                    <span class="btn-text">В корзину</span>
+                                    <span class="btn-text">' . htmlspecialchars($addToCartText) . '</span>
                                 </button>
                                 <!-- Блок управления количеством (скрыт по умолчанию) -->
                                 <div class="input-group input-group-sm quantity-controls d-none" data-product-id="' . $id . '">
@@ -103,7 +130,7 @@ class CatalogTemplate extends BaseTemplate
                                            value="1" min="1" data-product-id="' . $id . '">
                                     <button class="btn btn-outline-secondary btn-qty" data-action="increase" type="button">+</button>
                                 </div>
-                                <button type="button" class="btn btn-outline-dark btn-sm px-3 btn-product-details" data-id="' . $id . '">Подробнее</button>
+                                <button type="button" class="btn btn-outline-dark btn-sm px-3 btn-product-details" data-id="' . $id . '">' . htmlspecialchars($detailsText) . '</button>
                             </div>
                         </div>
                     </div>
@@ -117,15 +144,17 @@ class CatalogTemplate extends BaseTemplate
     /**
      * Сообщение, когда товары не найдены
      */
-    private static function renderEmptyState(): string
+    private static function renderEmptyState(array $texts = []): string
     {
+        $emptyText = $texts['empty'] ?? [];
+
         return '
         <div class="col-12">
             <div class="text-center py-5">
                 <i class="bi bi-search display-1 text-muted mb-3"></i>
-                <h4>Ничего не найдено 😔</h4>
-                <p class="text-muted">Попробуйте изменить поисковый запрос</p>
-                <a href="/catalog" class="btn btn-outline-dark mt-3">Сбросить фильтр</a>
+                <h4>' . htmlspecialchars($emptyText['title'] ?? 'Ничего не найдено 😔') . '</h4>
+                <p class="text-muted">' . htmlspecialchars($emptyText['message'] ?? 'Попробуйте изменить поисковый запрос') . '</p>
+                <a href="/catalog" class="btn btn-outline-dark mt-3">' . htmlspecialchars($emptyText['resetLink'] ?? 'Сбросить фильтр') . '</a>
             </div>
         </div>';
     }
@@ -133,13 +162,15 @@ class CatalogTemplate extends BaseTemplate
     /**
      * Инфо о результатах поиска
      */
-    private static function renderSearchInfo(int $count, string $search): string
+    private static function renderSearchInfo(int $count, string $search, array $texts = []): string
     {
+        $searchText = $texts['search'] ?? [];
+
         if (empty($search)) {
-            return '<p class="text-muted mt-3">Всего товаров: <strong>' . $count . '</strong></p>';
+            return '<p class="text-muted mt-3">' . htmlspecialchars($searchText['total'] ?? 'Всего товаров:') . ' <strong>' . $count . '</strong></p>';
         }
         
         $query = htmlspecialchars($search);
-        return '<p class="text-muted mt-3">Найдено по запросу "' . $query . '": <strong>' . $count . '</strong></p>';
+        return '<p class="text-muted mt-3">' . htmlspecialchars($searchText['results'] ?? 'Найдено по запросу') . ' "' . $query . '": <strong>' . $count . '</strong></p>';
     }
 }

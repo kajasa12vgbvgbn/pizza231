@@ -8,8 +8,28 @@ class ProductTemplate extends BaseTemplate
      */
     private const TEMPLATE_PATH = __DIR__ . '/templates/product.html.php';
 
+    /**
+     * Путь к файлу с текстами
+     */
+    private const TEXTS_PATH = __DIR__ . '/../../storage/templates/product.json';
+
+    /**
+     * Загружает тексты из JSON файла
+     */
+    private static function loadTexts(): array
+    {
+        $path = self::TEXTS_PATH;
+        if (!file_exists($path)) {
+            return [];
+        }
+        $json = file_get_contents($path);
+        return json_decode($json, true) ?? [];
+    }
+
     public static function getCardTemplate($data): string
     {
+        // Загружаем тексты
+        $texts = self::loadTexts();
         // Подготовка переменных для шаблона
         if (!$data) {
             $notFound = true;
