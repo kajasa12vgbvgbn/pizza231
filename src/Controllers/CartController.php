@@ -1,6 +1,9 @@
 <?php
 namespace App\Controllers;
 
+require_once __DIR__ . '/../Models/Cart.php';
+require_once __DIR__ . '/../Views/CartTemplate.php';
+
 use App\Models\Cart;
 use App\Views\CartTemplate;
 

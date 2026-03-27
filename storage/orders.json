@@ -69,5 +69,26 @@
         ],
         "total": 12500,
         "status": "new"
+    },
+    {
+        "id": "order_69c627f1e4156",
+        "date": "2026-03-27 07:47:13",
+        "fio": "Москвикинasfasfa",
+        "email": "ivasenkoignat22@gmail.com",
+        "phone": "79235232565",
+        "address": "улица Пушкина",
+        "payment": "cash",
+        "items": [
+            {
+                "id": 1,
+                "name": "Коленвал",
+                "price": 12500,
+                "image": "\/assets\/img\/1.jpg",
+                "quantity": 1,
+                "added_at": 1774594026
+            }
+        ],
+        "total": 12500,
+        "status": "new"
     }
 ]
