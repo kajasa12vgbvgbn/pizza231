@@ -1,11 +1,17 @@
 /* === Главный файл стилей === */
-/* Подключение отдельных модулей */
+/* Базовые стили (общие для всех страниц) */
 @import url('_base.css');
-@import url('_navbar.css');
-@import url('_components.css');
-@import url('_hero.css');
-@import url('_toast.css');
-@import url('_responsive.css');
+
+/* Стили отдельных шаблонов */
+@import url('home.css');
+@import url('product.css');
+@import url('catalog.css');
+@import url('cart.css');
+@import url('about.css');
+@import url('admin.css');
+@import url('admin_orders.css');
+@import url('admin_users.css');
+@import url('auth.css');
 
 body {
     font-family: 'Segoe UI', sans-serif;

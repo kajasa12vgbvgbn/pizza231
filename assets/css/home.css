@@ -1,4 +1,4 @@
-/* === Герой-секция === */
+/* === Стили для home.html.php === */
 .hero-section {
     background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('/assets/img/banner.webp');
     background-size: cover;
