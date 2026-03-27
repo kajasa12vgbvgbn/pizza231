@@ -505,15 +505,18 @@ function initCartPage() {
                 const modal = bootstrap.Modal.getInstance(document.getElementById('checkoutModal'));
                 modal.hide();
                 
+                // Очищаем корзину в localStorage
+                CartManager.clear();
+
+                // Очищаем глобальные переменные корзины
+                window.cartData = [];
+                window.cartTotal = 0;
+
                 // Показываем успех
                 CartManager.showToast('Заказ #' + result.orderId + ' оформлен!', 'success', false);
                 
-                // Перезагружаем страницу через время
-                setTimeout(() => {
-                    window.location.href = '/cart';
-                }, 2000);
-            } else {
-                CartManager.showToast(result.error || 'Ошибка оформления заказа', 'danger', false);
+                // Перезагружаем страницу
+                window.location.reload();
             }
         } catch (error) {
             CartManager.showToast('Ошибка соединения', 'danger', false);
