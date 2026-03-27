@@ -262,7 +262,8 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.addEventListener('click', function() {
             const product = JSON.parse(this.dataset.product);
             CartManager.add(product);
-            CartManager.showToast('"' + product.name + '" добавлен в корзину!');
+            // Маленький toast справа снизу (без видео)
+            CartManager.showToast('"' + product.name + '" добавлен в корзину!', 'success', false);
             // Переключаем на блок количества
             switchToQuantityControls(this);
         });
