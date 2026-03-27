@@ -33,7 +33,7 @@ class HomeTemplate extends BaseTemplate
         return json_decode($json, true) ?? [];
     }
 
-    public static function getTemplate(string $content = ''): string 
+    public static function getTemplate(string $content = '', array $texts = []): string 
     {
         // Загружаем тексты
         $texts = self::loadTexts();
@@ -56,7 +56,7 @@ class HomeTemplate extends BaseTemplate
         include self::TEMPLATE_PATH;
         $content = ob_get_clean();
         
-        return parent::getTemplate($content);
+        return parent::getTemplate($content, $texts);
     }
     
     /**

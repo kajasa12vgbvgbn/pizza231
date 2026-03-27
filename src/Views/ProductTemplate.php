@@ -66,6 +66,6 @@ class ProductTemplate extends BaseTemplate
         include self::TEMPLATE_PATH;
         $content = ob_get_clean();
 
-        return parent::getTemplate($content);
+        return parent::getTemplate($content, $texts);
     }
 }

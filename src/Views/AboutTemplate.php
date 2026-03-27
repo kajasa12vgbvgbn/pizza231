@@ -28,10 +28,12 @@ class AboutTemplate extends BaseTemplate
         return json_decode($json, true) ?? [];
     }
 
-    public static function getTemplate(string $content = ''): string
+    public static function getTemplate(string $content = '', array $texts = []): string
     {
-        // Загружаем тексты
-        $texts = self::loadTexts();
+        // Загружаем тексты (если не переданы)
+        if (empty($texts)) {
+            $texts = self::loadTexts();
+        }
 
         // Значения по умолчанию, если файл не загружен
         $address = $texts['contacts']['addressValue'] ?? '650070, г. Кемерово, ул. Тухачевского, 32';
@@ -45,6 +47,6 @@ class AboutTemplate extends BaseTemplate
         include self::TEMPLATE_PATH;
         $ourContent = ob_get_clean();
         
-        return parent::getTemplate($ourContent);
+        return parent::getTemplate($ourContent, $texts);
     }
 }

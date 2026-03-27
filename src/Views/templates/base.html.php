@@ -3,7 +3,13 @@
  * Базовый шаблон страницы
  * Доступные переменные:
  * - $content - основной контент страницы
+ * - $texts - массив текстов из storage/templates/base.json
  */
+
+// Значения по умолчанию
+$texts = $texts ?? [];
+$navText = $texts['nav'] ?? [];
+$footerText = $texts['footer'] ?? [];
 ?>
 <!DOCTYPE html>
 <html lang="ru">
@@ -30,10 +36,10 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="/">Главная</a>
+                        <a class="nav-link" href="/"><?= htmlspecialchars($navText['home'] ?? 'Главная') ?></a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/catalog">Каталог</a>
+                        <a class="nav-link" href="/catalog"><?= htmlspecialchars($navText['catalog'] ?? 'Каталог') ?></a>
                     </li>
                     <li class="nav-item position-relative">
                         <a class="nav-link" href="/cart">
@@ -43,12 +49,12 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/about">О нас</a>
+                        <a class="nav-link" href="/about"><?= htmlspecialchars($navText['about'] ?? 'О нас') ?></a>
                     </li>
                     <!-- Авторизация загружается через JavaScript -->
                     <li class="nav-item" id="auth-nav-item">
                         <a class="nav-link" href="/login">
-                            <i class="bi bi-person me-1"></i>Вход
+                            <i class="bi bi-person me-1"></i><?= htmlspecialchars($navText['login'] ?? 'Вход') ?>
                         </a>
                     </li>
                 </ul>
@@ -62,7 +68,7 @@
 
     <footer class="footer text-center py-3">
         <div class="container">
-            <p class="mb-0">&copy; 2026 Кемеровский кооперативный техникум. Все права защищены.</p>
+            <p class="mb-0">&copy; 2026 <?= htmlspecialchars($footerText['copyright'] ?? 'Кемеровский кооперативный техникум. Все права защищены.') ?></p>
         </div>
     </footer>
 

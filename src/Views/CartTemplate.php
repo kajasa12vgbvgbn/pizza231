@@ -39,7 +39,7 @@ class CartTemplate extends BaseTemplate
 
         $content = self::renderCartContent($cartItems, $total, $count, $texts);
 
-        return parent::getTemplate($content);
+        return parent::getTemplate($content, $texts);
     }
 
     private static function renderCartContent(array $items, float $total, int $count, array $texts = []): string

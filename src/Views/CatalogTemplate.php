@@ -31,9 +31,9 @@ class CatalogTemplate extends BaseTemplate
     /**
      * Метод должен совпадать с родителем (принимает строку)
      */
-    public static function getTemplate(string $content): string 
+    public static function getTemplate(string $content = '', array $texts = []): string
     {
-        return parent::getTemplate($content);
+        return parent::getTemplate($content, $texts);
     }
 
     /**
@@ -55,7 +55,7 @@ class CatalogTemplate extends BaseTemplate
         include self::TEMPLATE_PATH;
         $content = ob_get_clean();
         
-        return self::getTemplate($content);
+        return self::getTemplate($content, $texts);
     }
     
     /**
