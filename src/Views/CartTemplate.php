@@ -41,7 +41,7 @@ class CartTemplate extends BaseTemplate
                 $subtotal = $item['price'] * $quantity;
                 
                 $cartRows .= '
-                <tr class="align-middle">
+                <tr class="align-middle" data-id="' . $id . '">
                     <td class="py-3">
                         <div class="d-flex align-items-center">
                             <img src="' . $image . '" 

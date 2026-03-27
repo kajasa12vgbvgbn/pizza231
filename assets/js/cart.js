@@ -119,9 +119,28 @@ const CartManager = {
             
             // Обновить input в каталоге
             this.updateCatalogInput(id, quantity);
+            
+            // Обновить сумму в строке таблицы корзины
+            this.updateCartRowSubtotal(id);
             return true;
         }
         return false;
+    },
+    
+    // Обновить сумму в строке корзины
+    updateCartRowSubtotal(id) {
+        const cart = this.get();
+        const item = cart.find(i => i.id === id);
+        if (!item) return;
+        
+        const row = document.querySelector(`tr[data-id="${id}"]`);
+        if (row) {
+            const subtotalCell = row.querySelector('td:nth-child(4)');
+            if (subtotalCell) {
+                const subtotal = item.price * item.quantity;
+                subtotalCell.textContent = new Intl.NumberFormat('ru-RU').format(subtotal) + ' ₽';
+            }
+        }
     },
     
     // Удалить товар
@@ -130,9 +149,54 @@ const CartManager = {
         this.save(cart);
         this.syncRemoveBackend(id);
         
+        // Удалить строку из таблицы на странице корзины
+        this.removeCartRow(id);
+        
         // Вернуть кнопку в каталоге
         this.resetCatalogButton(id);
         return true;
+    },
+    
+    // Удалить строку товара из таблицы корзины
+    removeCartRow(id) {
+        // Ищем строку по data-id
+        const row = document.querySelector(`tr[data-id="${id}"]`);
+        if (row) {
+            row.remove();
+        }
+        
+        // Если корзина пуста - показать сообщение
+        const cart = this.get();
+        if (cart.length === 0) {
+            this.showEmptyCart();
+        }
+    },
+    
+    // Показать пустую корзину
+    showEmptyCart() {
+        const cartTable = document.getElementById('cart-items');
+        if (!cartTable) return;
+        
+        // Найти tbody и заменить содержимое
+        const tbody = cartTable.querySelector('tbody');
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center py-5">
+                        <i class="bi bi-cart-x display-1 text-muted mb-3"></i>
+                        <h4>Корзина пуста 😔</h4>
+                        <p class="text-muted">Добавьте товары из каталога</p>
+                        <a href="/catalog" class="btn btn-primary mt-2">Перейти в каталог</a>
+                    </td>
+                </tr>
+            `;
+        }
+        
+        // Скрыть итоговые блоки
+        const summaryEl = document.querySelector('.card-body:has(.h3.fw-bold.text-warning)');
+        if (summaryEl) {
+            summaryEl.innerHTML = '';
+        }
     },
     
     // Обновить input количества в каталоге
@@ -280,7 +344,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (this.dataset.action === 'increase') {
                 value++;
             } else {
-                value = Math.max(1, value - 1);
+                value = Math.max(0, value - 1); // Разрешаем 0 для удаления
             }
             
             input.value = value;
@@ -346,11 +410,16 @@ function initCartPage() {
             const input = document.querySelector(`.quantity-input[data-id="${id}"]`);
             let value = parseInt(input.value) || 1;
             
-            value = action === 'increase' ? value + 1 : Math.max(1, value - 1);
+            value = action === 'increase' ? value + 1 : Math.max(0, value - 1);
             input.value = value;
             
-            CartManager.updateQuantity(id, value);
-            CartManager.showToast('Количество обновлено');
+            if (value === 0) {
+                CartManager.remove(id);
+                CartManager.showToast('Товар удалён');
+            } else {
+                CartManager.updateQuantity(id, value);
+                CartManager.showToast('Количество обновлено', 'success', false);
+            }
         });
     });
     
@@ -359,7 +428,13 @@ function initCartPage() {
         input.addEventListener('change', function() {
             const id = parseInt(this.dataset.id);
             const value = parseInt(this.value) || 1;
-            CartManager.updateQuantity(id, value);
+            
+            if (value <= 0) {
+                CartManager.remove(id);
+                CartManager.showToast('Товар удалён');
+            } else {
+                CartManager.updateQuantity(id, value);
+            }
         });
     });
     
