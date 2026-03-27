@@ -25,7 +25,7 @@ class ProfileTemplate extends BaseTemplate
     /**
      * Страница профиля
      */
-    public static function render(array $profile): void
+    public static function render(array $profile, array $orders = []): void
     {
         $texts = self::loadTexts();
         
@@ -60,6 +60,137 @@ class ProfileTemplate extends BaseTemplate
         $saveBtnText = $texts['form']['save'] ?? 'Сохранить изменения';
         $emailNote = $texts['info']['emailNote'] ?? 'Email нельзя изменить';
         $phoneNote = $texts['info']['phoneNote'] ?? 'Телефон нельзя изменить';
+        
+        // Тексты для истории заказов
+        $ordersTitle = $texts['orders']['title'] ?? 'История заказов';
+        $noOrdersText = $texts['orders']['noOrders'] ?? 'У вас пока нет заказов';
+        $orderNumberText = $texts['orders']['orderNumber'] ?? 'Заказ';
+        $dateText = $texts['orders']['date'] ?? 'Дата';
+        $statusText = $texts['orders']['status'] ?? 'Статус';
+        $totalText = $texts['orders']['total'] ?? 'Сумма';
+        $detailsText = $texts['orders']['details'] ?? 'Детали';
+        $itemsText = $texts['orders']['items'] ?? 'Товаров';
+        $viewDetailsText = $texts['orders']['viewDetails'] ?? 'Показать детали';
+        $hideDetailsText = $texts['orders']['hideDetails'] ?? 'Скрыть детали';
+        
+        // Генерация HTML для истории заказов
+        $ordersHtml = '';
+        if (empty($orders)) {
+            $ordersHtml = '
+            <div class="text-center py-5">
+                <i class="bi bi-cart fs-1 text-muted mb-3 d-block"></i>
+                <h5 class="text-muted">' . htmlspecialchars($noOrdersText) . '</h5>
+                <p class="text-muted">Сделайте свой первый заказ в нашем магазине!</p>
+            </div>';
+        } else {
+            foreach ($orders as $order) {
+                $id = $order['id'] ?? '';
+                $shortId = substr($id, -8);
+                $createdAt = $order['created_at'] ?? '';
+                $dateFormatted = !empty($createdAt) ? date('d.m.Y H:i', strtotime($createdAt)) : '';
+                $status = $order['status'] ?? 'new';
+                $total = number_format($order['total'] ?? 0, 0, '.', ' ');
+                $itemsCount = count($order['items'] ?? []);
+                
+                $statusTextMap = [
+                    'new' => $texts['orders']['statusNew'] ?? 'Новый',
+                    'processing' => $texts['orders']['statusProcessing'] ?? 'В обработке',
+                    'completed' => $texts['orders']['statusCompleted'] ?? 'Выполнен',
+                    'cancelled' => $texts['orders']['statusCancelled'] ?? 'Отменён'
+                ];
+                $statusBadgeClass = match($status) {
+                    'new' => 'bg-primary',
+                    'processing' => 'bg-warning text-dark',
+                    'completed' => 'bg-success',
+                    'cancelled' => 'bg-danger',
+                    default => 'bg-secondary'
+                };
+                $statusDisplay = $statusTextMap[$status] ?? $status;
+                
+                $orderDetailsId = 'order-details-' . md5($id);
+                
+                $ordersHtml .= '
+                <div class="card mb-3 shadow-sm">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3">
+                                        <strong class="text-primary">#' . $shortId . '</strong>
+                                    </div>
+                                    <div>
+                                        <small class="text-muted d-block">' . htmlspecialchars($dateText) . '</small>
+                                        <div>' . htmlspecialchars($dateFormatted) . '</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <small class="text-muted d-block">' . htmlspecialchars($statusText) . '</small>
+                                <span class="badge ' . $statusBadgeClass . '">' . htmlspecialchars($statusDisplay) . '</span>
+                            </div>
+                            <div class="col-md-2">
+                                <small class="text-muted d-block">' . htmlspecialchars($itemsText) . '</small>
+                                <strong>' . $itemsCount . '</strong>
+                            </div>
+                            <div class="col-md-2">
+                                <small class="text-muted d-block">' . htmlspecialchars($totalText) . '</small>
+                                <strong class="text-success">' . $total . ' ₽</strong>
+                            </div>
+                            <div class="col-md-3 text-end">
+                                <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#' . $orderDetailsId . '" aria-expanded="false">
+                                    <i class="bi bi-chevron-down me-1"></i>' . htmlspecialchars($viewDetailsText) . '
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Детали заказа -->
+                        <div class="collapse mt-3" id="' . $orderDetailsId . '">
+                            <hr>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>Информация о доставке</h6>
+                                    <p class="mb-1"><strong>ФИО:</strong> ' . htmlspecialchars($order['fio'] ?? '') . '</p>
+                                    <p class="mb-1"><strong>Телефон:</strong> ' . htmlspecialchars($order['phone'] ?? '') . '</p>
+                                    <p class="mb-1"><strong>Адрес:</strong> ' . htmlspecialchars($order['address'] ?? '') . '</p>
+                                    <p class="mb-1"><strong>Способ оплаты:</strong> ' . (($order['payment'] ?? '') === 'cash' ? 'Наличными' : 'Картой') . '</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>Состав заказа</h6>';
+                
+                if (!empty($order['items'])) {
+                    $ordersHtml .= '<div class="table-responsive"><table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Товар</th>
+                                <th class="text-end">Цена</th>
+                                <th class="text-center">Кол-во</th>
+                                <th class="text-end">Сумма</th>
+                            </tr>
+                        </thead>
+                        <tbody>';
+                    
+                    foreach ($order['items'] as $item) {
+                        $itemTotal = ($item['price'] ?? 0) * ($item['quantity'] ?? 1);
+                        $ordersHtml .= '
+                            <tr>
+                                <td>' . htmlspecialchars($item['name'] ?? '') . '</td>
+                                <td class="text-end">' . number_format($item['price'] ?? 0, 0, '.', ' ') . ' ₽</td>
+                                <td class="text-center">' . ($item['quantity'] ?? 1) . '</td>
+                                <td class="text-end">' . number_format($itemTotal, 0, '.', ' ') . ' ₽</td>
+                            </tr>';
+                    }
+                    
+                    $ordersHtml .= '</tbody></table></div>';
+                }
+                
+                $ordersHtml .= '
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>';
+            }
+        }
         
         $content = <<<HTML
 <main>
@@ -142,6 +273,18 @@ class ProfileTemplate extends BaseTemplate
                                 <div class="toast-body"></div>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- История заказов -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title mb-4">{$ordersTitle}</h5>
+                        {$ordersHtml}
                     </div>
                 </div>
             </div>

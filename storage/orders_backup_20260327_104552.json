@@ -62,8 +62,7 @@
         ],
         "total": 12500,
         "status": "completed",
-        "completed_at": "2026-03-27 10:20:11",
-        "user_id": 2
+        "completed_at": "2026-03-27 10:20:11"
     },
     {
         "id": "order_69c64dc2ebebe",
@@ -85,43 +84,5 @@
         ],
         "total": 1850,
         "status": "new"
-    },
-    {
-        "id": "order_69c652b03614f",
-        "created_at": "2026-03-27 10:49:36",
-        "fio": "123",
-        "email": "bugalter@gameil.com",
-        "phone": "79235232565",
-        "address": "улица Пушкина",
-        "payment": "cash",
-        "items": [
-            {
-                "id": 2,
-                "name": "Тормозные колодки (передние)",
-                "price": 1850,
-                "image": "\/assets\/img\/2.jpg",
-                "quantity": 1,
-                "added_at": 1774604967
-            },
-            {
-                "id": 1,
-                "name": "Коленвал",
-                "price": 12500,
-                "image": "\/assets\/img\/1.jpg",
-                "quantity": 1,
-                "added_at": 1774604968
-            },
-            {
-                "id": 3,
-                "name": "Масляный фильтр",
-                "price": 450,
-                "image": "\/assets\/img\/3.jpg",
-                "quantity": 1,
-                "added_at": 1774604968
-            }
-        ],
-        "total": 14800,
-        "status": "new",
-        "user_id": 2
     }
 ]

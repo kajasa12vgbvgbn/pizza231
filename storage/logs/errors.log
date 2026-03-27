@@ -1,2 +1,1 @@
-[2026-03-27 10:25:26] ERROR: Test error message | Context: {"file":"test.php","line":10}
-[2026-03-27 10:28:25] INFO: 404 Not Found | Context: {"url":"\/favicon.ico"}
+[2026-03-27 10:48:50] INFO: 404 Not Found | Context: {"url":"\/favicon.ico"}

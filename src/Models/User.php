@@ -252,4 +252,47 @@ class User
         
         return null;
     }
+    
+    /**
+     * Получить историю заказов пользователя
+     */
+    public function getOrders(int $userId): array
+    {
+        $user = $this->findById($userId);
+        if (!$user) {
+            return [];
+        }
+        
+        $ordersFile = __DIR__ . '/../../storage/orders.json';
+        if (!file_exists($ordersFile)) {
+            return [];
+        }
+        
+        $content = file_get_contents($ordersFile);
+        $allOrders = json_decode($content, true) ?: [];
+        
+        $userOrders = [];
+        foreach ($allOrders as $order) {
+            // Проверяем по user_id (для новых заказов)
+            if (isset($order['user_id']) && $order['user_id'] === $userId) {
+                $userOrders[] = $order;
+                continue;
+            }
+            
+            // Для старых заказов без user_id проверяем по email
+            if (!isset($order['user_id']) && isset($order['email']) && 
+                strtolower($order['email']) === strtolower($user['email'])) {
+                $userOrders[] = $order;
+            }
+        }
+        
+        // Сортировка по дате (новые первые)
+        usort($userOrders, function($a, $b) {
+            $dateA = $a['created_at'] ?? '';
+            $dateB = $b['created_at'] ?? '';
+            return strtotime($dateB) - strtotime($dateA);
+        });
+        
+        return $userOrders;
+    }
 }

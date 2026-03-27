@@ -25,5 +25,23 @@
         "title": "Информация",
         "emailNote": "Email нельзя изменить",
         "phoneNote": "Телефон нельзя изменить"
+    },
+    "orders": {
+        "title": "История заказов",
+        "noOrders": "У вас пока нет заказов",
+        "orderNumber": "Заказ",
+        "date": "Дата",
+        "status": "Статус",
+        "total": "Сумма",
+        "details": "Детали",
+        "items": "Товаров",
+        "statusNew": "Новый",
+        "statusProcessing": "В обработке",
+        "statusCompleted": "Выполнен",
+        "statusCancelled": "Отменён",
+        "paymentCash": "Наличными",
+        "paymentCard": "Картой",
+        "viewDetails": "Показать детали",
+        "hideDetails": "Скрыть детали"
     }
 }

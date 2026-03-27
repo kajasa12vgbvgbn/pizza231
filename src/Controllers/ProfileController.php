@@ -52,7 +52,10 @@ class ProfileController
             return;
         }
         
-        echo ProfileTemplate::render($profile);
+        // Получить историю заказов
+        $orders = $this->userModel->getOrders($user['id']);
+        
+        echo ProfileTemplate::render($profile, $orders);
     }
     
     /**

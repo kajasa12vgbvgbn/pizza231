@@ -11,6 +11,13 @@ class CartController
 {
     private const ORDERS_FILE = __DIR__ . '/../../storage/orders.json';
 
+    public function __construct()
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+    }
+
     /**
      * Отображение страницы корзины
      */
@@ -48,7 +55,7 @@ class CartController
 
         $total = Cart::getTotal();
 
-        // Создаём заказ
+// Создаём заказ
         $order = [
             'id' => uniqid('order_'),
             'created_at' => date('Y-m-d H:i:s'),
@@ -62,13 +69,18 @@ class CartController
             'status' => 'new'
         ];
 
+        // Добавляем user_id только если пользователь авторизован
+        if (isset($_SESSION['user_id'])) {
+            $order['user_id'] = (int)$_SESSION['user_id'];
+        }
+
         // Читаем существующие заказы
         $orders = [];
         if (file_exists(self::ORDERS_FILE)) {
             $content = file_get_contents(self::ORDERS_FILE);
             $orders = json_decode($content, true) ?: [];
         }
-
+        
         // Добавляем новый заказ
         $orders[] = $order;
 
@@ -77,7 +89,7 @@ class CartController
             http_response_code(500);
             return json_encode(['success' => false, 'error' => 'Ошибка сохранения заказа']);
         }
-
+        
         // Очищаем корзину
         Cart::clear();
 
