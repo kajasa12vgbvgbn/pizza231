@@ -1,0 +1,19 @@
+/* === Адаптив === */
+@media (max-width: 768px) {
+    #fullscreenToast .toast-video {
+        width: 95vw;
+        height: auto;
+        max-height: 50vh;
+    }
+    #fullscreenToast .toast-message {
+        font-size: 1.3rem;
+        padding: 0 1rem;
+    }
+    #fullscreenToast .toast-close {
+        top: 1rem;
+        right: 1rem;
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+}

@@ -1,10 +1,11 @@
-/* === Базовые стили === */
-html, body {
-    height: 100%;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-}
+/* === Главный файл стилей === */
+/* Подключение отдельных модулей */
+@import url('_base.css');
+@import url('_navbar.css');
+@import url('_components.css');
+@import url('_hero.css');
+@import url('_toast.css');
+@import url('_responsive.css');
 
 body {
     font-family: 'Segoe UI', sans-serif;

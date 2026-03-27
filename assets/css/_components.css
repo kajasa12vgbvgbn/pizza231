@@ -1,0 +1,79 @@
+/* === Карточки === */
+.card {
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 15px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+/* === Кнопки === */
+.btn {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+}
+
+.btn:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+.btn:active {
+    transform: scale(0.98);
+}
+
+.btn-outline-light {
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.btn-outline-light:hover {
+    background: #fff;
+    color: #000 !important;
+    border-color: #fff;
+}
+
+/* === Формы === */
+input, textarea, select {
+    background: #fff !important;
+    border: 1px solid #ced4da !important;
+    color: #212529 !important;
+}
+
+input:focus, textarea:focus, select:focus {
+    border-color: #0d6efd !important;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* === Таблицы === */
+.table-dark {
+    --bs-table-bg: #fff;
+    --bs-table-color: #212529;
+    --bs-table-border-color: #dee2e6;
+}
+
+.table-dark thead {
+    background: #212529;
+    color: #fff;
+}
+
+.table-dark tbody tr:hover {
+    background: #f8f9fa;
+}
+
+/* Количество в корзине */
+.quantity-input {
+    background-color: #fff !important;
+    border-color: #ced4da !important;
+    color: #212529 !important;
+}
+
+.quantity-input::-webkit-outer-spin-button,
+.quantity-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
