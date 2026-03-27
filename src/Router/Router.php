@@ -15,12 +15,16 @@ require_once __DIR__ . '/../Controllers/CartController.php';
 require_once __DIR__ . '/../Models/User.php';
 require_once __DIR__ . '/../Controllers/AuthController.php';
 
+// 👇 НОВЫЕ: Контроллер админки
+require_once __DIR__ . '/../Controllers/AdminController.php';
+
 use App\Controllers\HomeController;
 use App\Controllers\AboutController;
 use App\Controllers\ProductController;
 use App\Controllers\CatalogController;
 use App\Controllers\CartController;
 use App\Controllers\AuthController;
+use App\Controllers\AdminController;
 
 class Router
 {
@@ -67,6 +71,22 @@ class Router
             case "logout":
                 $auth = new AuthController();
                 return $auth->logout();
+                
+            // 👇 НОВЫЕ МАРШРУТЫ ДЛЯ АДМИНКИ
+            case "admin":
+                $admin = new AdminController();
+                $action = $pieces[2] ?? 'index';
+                
+                switch ($action) {
+                    case 'orders':
+                        return $admin->orders();
+                    case 'users':
+                        return $admin->users();
+                    case 'index':
+                    case '':
+                    default:
+                        return $admin->index();
+                }
                 
             case "api":
                 // Обработка API-запросов
@@ -119,6 +139,24 @@ class Router
                             return $auth->apiLogout();
                         case 'current':
                             return $auth->apiGetCurrent();
+                        default:
+                            http_response_code(400);
+                            return json_encode(['error' => 'Неизвестное действие']);
+                    }
+                }
+                
+                // API админки
+                if ($subResource === 'admin') {
+                    $admin = new AdminController();
+                    $action = $pieces[3] ?? '';
+                    
+                    switch ($action) {
+                        case 'stats':
+                            return $admin->apiStats();
+                        case 'orders':
+                            return $admin->apiOrders();
+                        case 'users':
+                            return $admin->apiUsers();
                         default:
                             http_response_code(400);
                             return json_encode(['error' => 'Неизвестное действие']);

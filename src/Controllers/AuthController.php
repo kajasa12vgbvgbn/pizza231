@@ -76,6 +76,10 @@ class AuthController
                     $_SESSION['user_id'] = $user['id'];
                     $_SESSION['user_name'] = $user['name'];
                     $_SESSION['user_email'] = $user['email'];
+                    $_SESSION['is_admin'] = $user['is_admin'] ?? false;
+                    
+                    // Записать сессию
+                    session_write_close();
                     
                     // Перенаправление
                     header('Location: /');
@@ -113,10 +117,13 @@ class AuthController
         }
         
         if (isset($_SESSION['user_id'])) {
+            $isAdmin = $_SESSION['is_admin'] ?? false;
+            
             return [
                 'id' => $_SESSION['user_id'],
                 'name' => $_SESSION['user_name'],
-                'email' => $_SESSION['user_email']
+                'email' => $_SESSION['user_email'],
+                'is_admin' => $isAdmin
             ];
         }
         
@@ -186,13 +193,17 @@ class AuthController
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['user_name'] = $user['name'];
             $_SESSION['user_email'] = $user['email'];
+            $_SESSION['is_admin'] = $user['is_admin'] ?? false;
+            
+            session_write_close();
             
             return json_encode([
                 'success' => true, 
                 'user' => [
                     'id' => $user['id'],
                     'name' => $user['name'],
-                    'email' => $user['email']
+                    'email' => $user['email'],
+                    'is_admin' => $user['is_admin'] ?? false
                 ]
             ], JSON_UNESCAPED_UNICODE);
         }
@@ -224,7 +235,20 @@ class AuthController
     {
         header('Content-Type: application/json');
         
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        
         $user = self::getCurrentUser();
+        
+        // Если есть user, но нет is_admin - проверить через модель
+        if ($user) {
+            $isAdmin = $this->userModel->isAdmin($user['id']);
+            $user['is_admin'] = $isAdmin;
+            
+            // Обновить сессию
+            $_SESSION['is_admin'] = $isAdmin;
+        }
         
         if ($user) {
             return json_encode(['user' => $user], JSON_UNESCAPED_UNICODE);

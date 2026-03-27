@@ -90,5 +90,50 @@
         ],
         "total": 12500,
         "status": "new"
+    },
+    {
+        "id": "order_69c629bf67660",
+        "date": "2026-03-27 07:54:55",
+        "fio": "Москвикинasfasfa",
+        "email": "ivasenkoignat22@gmail.com",
+        "phone": "79235232565",
+        "address": "улица Пушкина",
+        "payment": "cash",
+        "items": [
+            {
+                "id": 2,
+                "name": "Тормозные колодки (передние)",
+                "price": 1850,
+                "image": "\/assets\/img\/2.jpg",
+                "quantity": 1,
+                "added_at": 1774594485
+            },
+            {
+                "id": 3,
+                "name": "Масляный фильтр",
+                "price": 450,
+                "image": "\/assets\/img\/3.jpg",
+                "quantity": 1,
+                "added_at": 1774594485
+            },
+            {
+                "id": 6,
+                "name": "Комплект ГРМ",
+                "price": 5600,
+                "image": "\/assets\/img\/6.jpg",
+                "quantity": 1,
+                "added_at": 1774594486
+            },
+            {
+                "id": 5,
+                "name": "Амортизатор задний",
+                "price": 3200,
+                "image": "\/assets\/img\/5.jpg",
+                "quantity": 1,
+                "added_at": 1774594487
+            }
+        ],
+        "total": 11100,
+        "status": "new"
     }
 ]

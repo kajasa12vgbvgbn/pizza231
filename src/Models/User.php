@@ -7,7 +7,8 @@ use App\Config\Config;
 
 class User
 {
-    private const FILE_USERS = ".\storage\users.json";
+    private const FILE_USERS = __DIR__ . '/../../storage/users.json';
+    private const FILE_ADMINS = __DIR__ . '/../../storage/admins.json';
     
     /**
      * Загрузить всех пользователей
@@ -29,6 +30,25 @@ class User
     }
     
     /**
+     * Загрузить всех администраторов
+     */
+    public function loadAdmins(): array
+    {
+        if (!file_exists(self::FILE_ADMINS)) {
+            return [];
+        }
+        
+        $data = file_get_contents(self::FILE_ADMINS);
+        $admins = json_decode($data, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($admins)) {
+            return [];
+        }
+
+        return $admins;
+    }
+    
+    /**
      * Сохранить всех пользователей
      */
     private function saveData(array $users): bool
@@ -46,6 +66,16 @@ class User
      */
     public function findByEmail(string $email): ?array
     {
+        // Сначала проверяем среди админов
+        $admins = $this->loadAdmins();
+        foreach ($admins as $key => $admin) {
+            if (strtolower($admin['email']) === strtolower($email)) {
+                $admin['is_admin'] = true;
+                return $admin;
+            }
+        }
+        
+        // Потом среди обычных пользователей
         $users = $this->loadData();
         
         foreach ($users as $user) {
@@ -71,6 +101,30 @@ class User
         }
         
         return null;
+    }
+    
+    /**
+     * Проверить, является ли пользователь админом
+     */
+    public function isAdmin(int $userId): bool
+    {
+        // Если id == 0, это админ из admins.json
+        if ($userId === 0) {
+            return true;
+        }
+        
+        // Проверяем по email пользователя
+        $user = $this->findById($userId);
+        if (!$user) return false;
+        
+        $admins = $this->loadAdmins();
+        foreach ($admins as $admin) {
+            if (strtolower($admin['email']) === strtolower($user['email'])) {
+                return true;
+            }
+        }
+        
+        return false;
     }
     
     /**
@@ -117,6 +171,23 @@ class User
      */
     public function verifyPassword(string $email, string $password): ?array
     {
+        // Проверяем сначала среди админов
+        $admins = $this->loadAdmins();
+        foreach ($admins as $key => $admin) {
+            if (strtolower($admin['email']) === strtolower($email)) {
+                if ($password === $admin['password']) {
+                    return [
+                        'id' => 0,
+                        'email' => $admin['email'],
+                        'name' => $admin['name'],
+                        'is_admin' => true
+                    ];
+                }
+                return null;
+            }
+        }
+        
+        // Потом среди обычных пользователей
         $user = $this->findByEmail($email);
         
         if ($user === null) {

@@ -546,13 +546,15 @@ async function loadCurrentUser() {
         const response = await fetch('/api/auth/current');
         const data = await response.json();
         
+        console.log('User data:', data);
+        
         if (data.user) {
             updateNavbarUser(data.user);
         } else {
             updateNavbarUser(null);
         }
     } catch (error) {
-        console.log('Не удалось загрузить данные пользователя');
+        console.log('Не удалось загрузить данные пользователя', error);
     }
 }
 
@@ -562,6 +564,21 @@ function updateNavbarUser(user) {
     if (!authItem) return;
     
     if (user) {
+        let dropdownContent = `
+            <li><span class="dropdown-item-text text-muted small">${user.email}</span></li>
+            <li><hr class="dropdown-divider"></li>
+        `;
+        
+        // Если пользователь админ - добавить ссылку в админку
+        if (user.is_admin) {
+            dropdownContent += `
+                <li><a class="dropdown-item" href="/admin"><i class="bi bi-gear me-2"></i>Админ-панель</a></li>
+                <li><hr class="dropdown-divider"></li>
+            `;
+        }
+        
+        dropdownContent += `<li><a class="dropdown-item text-danger" href="/logout">Выйти</a></li>`;
+        
         // Заменить на выпадающий список с именем пользователя
         authItem.outerHTML = `
             <li class="nav-item dropdown">
@@ -570,9 +587,7 @@ function updateNavbarUser(user) {
                     ${user.name}
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end">
-                    <li><span class="dropdown-item-text text-muted small">${user.email}</span></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item text-danger" href="/logout">Выйти</a></li>
+                    ${dropdownContent}
                 </ul>
             </li>
         `;
