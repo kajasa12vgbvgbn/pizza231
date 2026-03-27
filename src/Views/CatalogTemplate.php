@@ -103,7 +103,7 @@ class CatalogTemplate extends BaseTemplate
                                            value="1" min="1" data-product-id="' . $id . '">
                                     <button class="btn btn-outline-secondary btn-qty" data-action="increase" type="button">+</button>
                                 </div>
-                                <a href="/product/' . $id . '" class="btn btn-outline-dark btn-sm px-3">Подробнее</a>
+                                <button type="button" class="btn btn-outline-dark btn-sm px-3 btn-product-details" data-id="' . $id . '">Подробнее</button>
                             </div>
                         </div>
                     </div>

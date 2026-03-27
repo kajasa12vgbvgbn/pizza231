@@ -85,5 +85,199 @@ document.addEventListener("DOMContentLoaded", function() {
         toast.setAttribute('aria-hidden', 'true');
         document.body.classList.remove('toast-open');
     });
+    
+    // Обработчики для кнопок "Подробнее"
+    document.querySelectorAll('.btn-product-details').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const productId = this.dataset.id;
+            loadProductModal(productId);
+        });
+    });
 });
+
+// Загрузка данных товара и показ модального окна
+async function loadProductModal(productId) {
+    const modalEl = document.getElementById('productModal');
+    const modalBody = modalEl.querySelector('.modal-body');
+    const modal = new bootstrap.Modal(modalEl);
+    
+    // Показать загрузку
+    modalBody.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>';
+    modal.show();
+    
+    try {
+        const response = await fetch('/api/product/' + productId);
+        const data = await response.json();
+        
+        if (data.notFound) {
+            modalBody.innerHTML = '<div class="alert alert-warning">Товар не найден</div>';
+            return;
+        }
+        
+        const product = data;
+        const priceFormatted = new Intl.NumberFormat('ru-RU').format(product.price);
+        const image = product.image || '/assets/img/no-image.jpg';
+        const fallbackImage = '/assets/img/error.jpg';
+        
+        // Проверить, есть ли товар в корзине
+        const cart = CartManager ? CartManager.get() : [];
+        const cartItem = cart.find(item => item.id === product.id);
+        const inCart = !!cartItem;
+        const quantity = cartItem ? cartItem.quantity : 1;
+        
+        const productJson = JSON.stringify({
+            id: product.id,
+            name: product.name,
+            price: product.price,
+            image: product.image
+        }).replace(/"/g, '&quot;');
+        
+        modalBody.innerHTML = `
+            <div class="row">
+                <div class="col-md-5 mb-3 mb-md-0">
+                    <img src="${image}" 
+                         class="img-fluid rounded-3 shadow-sm" 
+                         alt="${product.name}"
+                         style="width: 100%; max-height: 300px; object-fit: contain;"
+                         onerror="this.src='${fallbackImage}'; this.onerror=null;">
+                </div>
+                <div class="col-md-7">
+                    <h5 class="text-uppercase fw-bold ls-1 mb-2 text-muted" style="font-size: 0.8rem;">Наше меню</h5>
+                    <h3 class="card-title fw-bold mb-3">${product.name}</h3>
+                    <p class="card-text text-muted" style="line-height: 1.6;">${product.description}</p>
+                    
+                    <div class="d-flex align-items-center mb-3">
+                        <span class="h3 fw-bold me-3">${priceFormatted} ₽</span>
+                        <span class="badge bg-success px-3 py-2 rounded-pill">В наличии</span>
+                    </div>
+                    
+                    <div class="d-flex align-items-center gap-2">
+                        ${inCart ? `
+                            <div class="input-group input-group-sm" style="max-width: 130px;">
+                                <button class="btn btn-outline-secondary btn-qty-modal" data-action="decrease" data-id="${product.id}">−</button>
+                                <input type="number" class="form-control text-center qty-input-modal" 
+                                       value="${quantity}" min="1" data-id="${product.id}">
+                                <button class="btn btn-outline-secondary btn-qty-modal" data-action="increase" data-id="${product.id}">+</button>
+                            </div>
+                        ` : `
+                            <button type="button" 
+                                    class="btn btn-primary btn-add-to-cart"
+                                    data-product="${productJson}"
+                                    data-id="${product.id}">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-cart-plus me-1" viewBox="0 0 16 16">
+                                    <path d="M9 5.5a.5.5 0 0 0-1 0V7H6.5a.5.5 0 0 0 0 1H8v1.5a.5.5 0 0 0 1 0V8h1.5a.5.5 0 0 0 0-1H9z"/>
+                                    <path d="M.5 1a.5.5 0 0 0 0 1h1.11l.401 1.607 1.498 7.985A.5.5 0 0 0 4 12h1a2 2 0 1 0 0 4 2 2 0 0 0 0-4h7a2 2 0 1 0 0 4 2 2 0 0 0 0-4h1a.5.5 0 0 0 .491-.408l1.5-8A.5.5 0 0 0 14.5 3H2.89l-.405-1.621A.5.5 0 0 0 2 1zM6 14a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm7 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+                                </svg>
+                                В корзину
+                            </button>
+                        `}
+                        <a href="/product/${product.id}" class="btn btn-outline-dark">Подробнее</a>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Добавить обработчики для кнопок в модальном окне
+        initModalCartHandlers(product.id);
+        
+    } catch (error) {
+        modalBody.innerHTML = '<div class="alert alert-danger">Ошибка загрузки товара</div>';
+    }
+}
+
+// Инициализация обработчиков корзины в модальном окне
+function initModalCartHandlers(productId) {
+    // Кнопка "В корзину"
+    const addBtn = document.querySelector(`#productModal .btn-add-to-cart[data-id="${productId}"]`);
+    if (addBtn) {
+        addBtn.addEventListener('click', function() {
+            const product = JSON.parse(this.dataset.product);
+            CartManager.add(product);
+            CartManager.showToast('"' + product.name + '" добавлен в корзину!', 'success', false);
+            
+            // Переключиться на блок управления количеством
+            const modalBody = document.querySelector('#productModal .modal-body');
+            const cart = CartManager.get();
+            const item = cart.find(i => i.id === productId);
+            
+            if (item) {
+                const productJson = JSON.stringify({
+                    id: product.id,
+                    name: product.name,
+                    price: product.price,
+                    image: product.image
+                }).replace(/"/g, '&quot;');
+                
+                const controlsHtml = `
+                    <div class="input-group input-group-sm" style="max-width: 130px;">
+                        <button class="btn btn-outline-secondary btn-qty-modal" data-action="decrease" data-id="${product.id}">−</button>
+                        <input type="number" class="form-control text-center qty-input-modal" 
+                               value="${item.quantity}" min="1" data-id="${product.id}">
+                        <button class="btn btn-outline-secondary btn-qty-modal" data-action="increase" data-id="${product.id}">+</button>
+                    </div>
+                `;
+                
+                this.outerHTML = controlsHtml;
+                initModalCartHandlers(productId);
+            }
+        });
+    }
+    
+    // Кнопки +/- в модальном окне
+    document.querySelectorAll(`#productModal .btn-qty-modal`).forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = parseInt(this.dataset.id);
+            const input = document.querySelector(`#productModal .qty-input-modal[data-id="${id}"]`);
+            let value = parseInt(input.value) || 1;
+            
+            if (this.dataset.action === 'increase') {
+                value++;
+            } else {
+                value = Math.max(0, value - 1);
+            }
+            
+            input.value = value;
+            
+            if (value === 0) {
+                CartManager.remove(id);
+                CartManager.showToast('Товар удалён', 'success', false);
+                // Вернуть кнопку "В корзину"
+                loadProductModal(id);
+            } else {
+                CartManager.updateQuantity(id, value);
+            }
+        });
+    });
+    
+    // Прямой ввод количества
+    document.querySelectorAll(`#productModal .qty-input-modal`).forEach(input => {
+        input.addEventListener('change', function() {
+            const id = parseInt(this.dataset.id);
+            const value = parseInt(this.value) || 1;
+            
+            if (value <= 0) {
+                CartManager.remove(id);
+                CartManager.showToast('Товар удалён', 'success', false);
+                loadProductModal(id);
+            } else {
+                CartManager.updateQuantity(id, value);
+            }
+        });
+    });
+}
 </script>
+
+<!-- Модальное окно товара -->
+<div class="modal fade" id="productModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Информация о товаре</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Загружается через JS -->
+            </div>
+        </div>
+    </div>
+</div>

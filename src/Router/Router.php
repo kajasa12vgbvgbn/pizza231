@@ -51,8 +51,17 @@ class Router
                 return $cart->get(); // Страница корзины
                 
             case "api":
-                // Обработка API-запросов корзины
+                // Обработка API-запросов
                 $subResource = $pieces[2] ?? '';
+                
+                // API товара
+                if ($subResource === 'product') {
+                    $id = isset($pieces[3]) ? intval($pieces[3]) : 0;
+                    $productController = new ProductController();
+                    return $productController->apiGet($id);
+                }
+                
+                // API корзины
                 $cart = new CartController();
                 
                 if ($subResource === 'cart') {
