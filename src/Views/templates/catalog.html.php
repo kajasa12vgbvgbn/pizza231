@@ -171,7 +171,6 @@ async function loadProductModal(productId) {
                                 В корзину
                             </button>
                         `}
-                        <a href="/product/${product.id}" class="btn btn-outline-dark">Подробнее</a>
                     </div>
                 </div>
             </div>
