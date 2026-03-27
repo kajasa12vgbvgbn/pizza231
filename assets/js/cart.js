@@ -414,7 +414,13 @@ async function fillCheckoutFormFromProfile() {
             return; // Пользователь не авторизован
         }
         
-        // Загружаем профиль
+        // Заполняем email из данных авторизации
+        const emailInput = document.getElementById('email');
+        if (emailInput && authData.user.email) {
+            emailInput.value = authData.user.email;
+        }
+        
+        // Загружаем профиль для остальных полей
         const profileResponse = await fetch('/api/profile');
         const profileData = await profileResponse.json();
         
