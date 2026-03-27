@@ -201,4 +201,55 @@ class User
         
         return null;
     }
+
+    /**
+     * Обновить профиль пользователя
+     */
+    public function updateProfile(int $userId, array $data): bool
+    {
+        $users = $this->loadData();
+        
+        foreach ($users as &$user) {
+            if ($user['id'] === $userId) {
+                // Обновляем только разрешённые поля
+                if (isset($data['name'])) {
+                    $user['name'] = trim($data['name']);
+                }
+                if (isset($data['phone'])) {
+                    $user['phone'] = trim($data['phone']);
+                }
+                if (isset($data['address'])) {
+                    $user['address'] = trim($data['address']);
+                }
+                if (isset($data['avatar'])) {
+                    $user['avatar'] = $data['avatar'];
+                }
+                
+                $user['updated_at'] = date('Y-m-d H:i:s');
+                
+                return $this->saveData($users);
+            }
+        }
+        
+        return false;
+    }
+
+    /**
+     * Получить полный профиль пользователя с доп. полями
+     */
+    public function getFullProfile(int $userId): ?array
+    {
+        $user = $this->findById($userId);
+        
+        if ($user) {
+            // Добавляем значения по умолчанию для отсутствующих полей
+            return array_merge([
+                'phone' => '',
+                'address' => '',
+                'avatar' => ''
+            ], $user);
+        }
+        
+        return null;
+    }
 }

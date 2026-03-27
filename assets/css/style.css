@@ -12,6 +12,7 @@
 @import url('admin_orders.css');
 @import url('admin_users.css');
 @import url('auth.css');
+@import url('profile.css');
 
 body {
     font-family: 'Segoe UI', sans-serif;

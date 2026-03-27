@@ -403,8 +403,51 @@ function switchToQuantityControls(btn) {
     }
 }
 
+// Заполнить форму оформления заказа данными из профиля
+async function fillCheckoutFormFromProfile() {
+    // Проверяем, авторизован ли пользователь
+    try {
+        const authResponse = await fetch('/api/auth/current');
+        const authData = await authResponse.json();
+        
+        if (!authData.user) {
+            return; // Пользователь не авторизован
+        }
+        
+        // Загружаем профиль
+        const profileResponse = await fetch('/api/profile');
+        const profileData = await profileResponse.json();
+        
+        if (profileData.profile) {
+            const profile = profileData.profile;
+            
+            // Заполняем форму
+            const fioInput = document.getElementById('fio');
+            const phoneInput = document.getElementById('phone');
+            const addressInput = document.getElementById('address');
+            
+            if (fioInput && profile.name) {
+                fioInput.value = profile.name;
+            }
+            
+            if (phoneInput && profile.phone) {
+                phoneInput.value = profile.phone;
+            }
+            
+            if (addressInput && profile.address) {
+                addressInput.value = profile.address;
+            }
+        }
+    } catch (error) {
+        console.log('Не удалось загрузить профиль для автозаполнения', error);
+    }
+}
+
 // Инициализация страницы корзины
 function initCartPage() {
+    // Загрузить профиль и подставить данные в форму оформления заказа
+    fillCheckoutFormFromProfile();
+    
     // Изменение количества
     document.querySelectorAll('.btn-quantity').forEach(btn => {
         btn.addEventListener('click', function() {
@@ -562,32 +605,46 @@ async function loadCurrentUser() {
 }
 
 // Обновление навбара с данными пользователя
-function updateNavbarUser(user) {
+async function updateNavbarUser(user) {
     const authItem = document.getElementById('auth-nav-item');
     if (!authItem) return;
     
     if (user) {
+        // Попробовать загрузить профиль для получения аватара
+        let avatarHtml = '';
+        try {
+            const profileResponse = await fetch('/api/profile');
+            const profileData = await profileResponse.json();
+            if (profileData.profile && profileData.profile.avatar) {
+                avatarHtml = `<img src="${profileData.profile.avatar}" alt="Аватар" class="nav-avatar rounded-circle me-2" style="width: 28px; height: 28px; object-fit: cover;">`;
+                // Сохранить профиль в глобальную переменную для использования в корзине
+                window.userProfile = profileData.profile;
+            }
+        } catch (e) {
+            console.log('Не удалось загрузить аватар');
+        }
+        
         let dropdownContent = `
             <li><span class="dropdown-item-text text-muted small">${user.email}</span></li>
             <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="/profile"><i class="bi bi-person me-2"></i>Профиль</a></li>
         `;
         
         // Если пользователь админ - добавить ссылку в админку
         if (user.is_admin) {
             dropdownContent += `
                 <li><a class="dropdown-item" href="/admin"><i class="bi bi-gear me-2"></i>Админ-панель</a></li>
-                <li><hr class="dropdown-divider"></li>
             `;
         }
         
-        dropdownContent += `<li><a class="dropdown-item text-danger" href="/logout">Выйти</a></li>`;
+        dropdownContent += `<li><hr class="dropdown-divider"></li><li><a class="dropdown-item text-danger" href="/logout">Выйти</a></li>`;
         
-        // Заменить на выпадающий список с именем пользователя
+        // Заменить на выпадающий список с именем пользователя и аватаром
         authItem.outerHTML = `
             <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                    <i class="bi bi-person-circle me-1"></i>
-                    ${user.name}
+                <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown">
+                    ${avatarHtml}
+                    <span>${user.name}</span>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end">
                     ${dropdownContent}

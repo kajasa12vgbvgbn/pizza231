@@ -39,6 +39,7 @@
             }
         ],
         "total": 3200,
-        "status": "new"
+        "status": "completed",
+        "completed_at": "2026-03-27 09:29:51"
     }
 ]

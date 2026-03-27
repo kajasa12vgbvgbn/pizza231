@@ -18,6 +18,9 @@ require_once __DIR__ . '/../Controllers/AuthController.php';
 // 👇 НОВЫЕ: Контроллер админки
 require_once __DIR__ . '/../Controllers/AdminController.php';
 
+// 👇 НОВЫЕ: Контроллер профиля
+require_once __DIR__ . '/../Controllers/ProfileController.php';
+
 use App\Controllers\HomeController;
 use App\Controllers\AboutController;
 use App\Controllers\ProductController;
@@ -25,6 +28,7 @@ use App\Controllers\CatalogController;
 use App\Controllers\CartController;
 use App\Controllers\AuthController;
 use App\Controllers\AdminController;
+use App\Controllers\ProfileController;
 
 class Router
 {
@@ -87,6 +91,11 @@ class Router
                     default:
                         return $admin->index();
                 }
+                
+            // 👇 НОВЫЕ МАРШРУТЫ ДЛЯ ПРОФИЛЯ
+            case "profile":
+                $profile = new ProfileController();
+                return $profile->get();
                 
             case "api":
                 // Обработка API-запросов
@@ -159,6 +168,25 @@ class Router
                             return $admin->apiOrders();
                         case 'users':
                             return $admin->apiUsers();
+                        default:
+                            http_response_code(400);
+                            return json_encode(['error' => 'Неизвестное действие']);
+                    }
+                }
+                
+                // API профиля
+                if ($subResource === 'profile') {
+                    $profile = new ProfileController();
+                    $action = $pieces[3] ?? '';
+                    
+                    switch ($action) {
+                        case 'update':
+                            return $profile->apiUpdate();
+                        case 'avatar':
+                            return $profile->apiUploadAvatar();
+                        case '':
+                        case 'get':
+                            return $profile->apiGet();
                         default:
                             http_response_code(400);
                             return json_encode(['error' => 'Неизвестное действие']);
