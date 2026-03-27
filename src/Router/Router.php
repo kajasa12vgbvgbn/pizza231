@@ -21,6 +21,9 @@ require_once __DIR__ . '/../Controllers/AdminController.php';
 // 👇 НОВЫЕ: Контроллер профиля
 require_once __DIR__ . '/../Controllers/ProfileController.php';
 
+// 👇 Логирование ошибок
+require_once __DIR__ . '/../Models/Logger.php';
+
 use App\Controllers\HomeController;
 use App\Controllers\AboutController;
 use App\Controllers\ProductController;
@@ -29,6 +32,7 @@ use App\Controllers\CartController;
 use App\Controllers\AuthController;
 use App\Controllers\AdminController;
 use App\Controllers\ProfileController;
+use App\Models\Logger;
 
 class Router
 {
@@ -77,7 +81,7 @@ class Router
                 return $auth->logout();
                 
             // 👇 НОВЫЕ МАРШРУТЫ ДЛЯ АДМИНКИ
-            case "admin":
+case "admin":
                 $admin = new AdminController();
                 $action = $pieces[2] ?? 'index';
                 
@@ -86,6 +90,8 @@ class Router
                         return $admin->orders();
                     case 'users':
                         return $admin->users();
+                    case 'logs':
+                        return $admin->logs();
                     case 'index':
                     case '':
                     default:
@@ -161,13 +167,17 @@ class Router
                     $admin = new AdminController();
                     $action = $pieces[3] ?? '';
                     
-                    switch ($action) {
+switch ($action) {
                         case 'stats':
                             return $admin->apiStats();
                         case 'orders':
                             return $admin->apiOrders();
                         case 'users':
                             return $admin->apiUsers();
+                        case 'logs':
+                            return $admin->apiLogs();
+                        case 'clear-logs':
+                            return $admin->apiClearLogs();
                         default:
                             http_response_code(400);
                             return json_encode(['error' => 'Неизвестное действие']);
@@ -199,6 +209,7 @@ class Router
                 
             default:
                 http_response_code(404);
+                Logger::info('404 Not Found', ['url' => $url]);
                 echo "404 - Страница не найдена";
                 break;
         }

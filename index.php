@@ -11,6 +11,7 @@ require_once __DIR__ . '/src/Controllers/CartController.php'; // 👈 Новый
 
 // Модели
 require_once __DIR__ . '/src/Models/Cart.php'; // 👈 Новая модель
+require_once __DIR__ . '/src/Models/Logger.php'; // 👈 Логирование ошибок
 
 // Шаблоны
 require_once __DIR__ . '/src/Views/BaseTemplate.php';
@@ -19,6 +20,38 @@ require_once __DIR__ . '/src/Views/AboutTemplate.php';
 require_once __DIR__ . '/src/Views/CartTemplate.php'; // 👈 Новый шаблон
 
 use App\Router\Router;
+use App\Models\Logger;
+
+// Регистрация обработчиков ошибок и исключений
+set_error_handler(function(int $errno, string $errstr, string $errfile, int $errline) {
+    Logger::error($errstr, [
+        'file' => $errfile,
+        'line' => $errline,
+        'errno' => $errno
+    ]);
+    
+    // Продолжаем стандартную обработку ошибок
+    return false;
+});
+
+set_exception_handler(function(Throwable $exception) {
+    Logger::error($exception->getMessage(), [
+        'file' => $exception->getFile(),
+        'line' => $exception->getLine(),
+        'trace' => $exception->getTraceAsString()
+    ]);
+    
+    // Показываем пользователю дружелюбное сообщение об ошибке
+    if (str_starts_with($_SERVER['REQUEST_URI'] ?? '', '/api/')) {
+        header('Content-Type: application/json; charset=utf-8');
+        http_response_code(500);
+        echo json_encode(['error' => 'Внутренняя ошибка сервера'], JSON_UNESCAPED_UNICODE);
+    } else {
+        http_response_code(500);
+        echo '<h1>Внутренняя ошибка сервера</h1>';
+        echo '<p>Приносим извинения за временные неудобства. Мы уже работаем над решением проблемы.</p>';
+    }
+});
 
 $router = new Router();
 $url = $_SERVER['REQUEST_URI'];

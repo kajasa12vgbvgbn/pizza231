@@ -96,4 +96,18 @@ $revenueFormatted = number_format($stats['total_revenue'] ?? 0, 0, '.', ' ');
             </div>
         </div>
     </div>
+
+    <div class="row g-4 mt-2">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i><?= htmlspecialchars($cardsText['logsTitle'] ?? 'Логи ошибок') ?></h5>
+                </div>
+                <div class="card-body">
+                    <p><?= htmlspecialchars($cardsText['logsDesc'] ?? 'Просмотр и управление логами ошибок сайта') ?></p>
+                    <a href="/admin/logs" class="btn btn-warning"><?= htmlspecialchars($cardsText['logsLink'] ?? 'Перейти к логам') ?></a>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>

@@ -21,6 +21,11 @@ class AdminTemplate extends BaseTemplate
     private const USERS_TEMPLATE_PATH = __DIR__ . '/templates/admin_users.html.php';
 
     /**
+     * Путь к файлу шаблона логов ошибок
+     */
+    private const LOGS_TEMPLATE_PATH = __DIR__ . '/templates/admin_logs.html.php';
+
+    /**
      * Путь к файлу с текстами
      */
     private const TEXTS_PATH = __DIR__ . '/../../storage/templates/admin.json';
@@ -52,7 +57,7 @@ class AdminTemplate extends BaseTemplate
 
         return parent::getTemplate($content, $texts);
     }
-    
+
     /**
      * Рендер страницы заказов с вкладками
      */
@@ -196,6 +201,21 @@ class AdminTemplate extends BaseTemplate
         // Подключаем шаблон
         ob_start();
         include self::USERS_TEMPLATE_PATH;
+        $content = ob_get_clean();
+
+        return parent::getTemplate($content, $texts);
+    }
+    
+    /**
+     * Рендер страницы логов ошибок
+     */
+    public static function renderLogs(array $logs): string
+    {
+        $texts = self::loadTexts();
+        
+        // Подключаем шаблон
+        ob_start();
+        include self::LOGS_TEMPLATE_PATH;
         $content = ob_get_clean();
 
         return parent::getTemplate($content, $texts);

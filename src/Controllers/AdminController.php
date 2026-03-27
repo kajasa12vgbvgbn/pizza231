@@ -3,10 +3,12 @@ namespace App\Controllers;
 
 require_once __DIR__ . '/../Models/User.php';
 require_once __DIR__ . '/../Models/Product.php';
+require_once __DIR__ . '/../Models/Logger.php';
 require_once __DIR__ . '/../Views/AdminTemplate.php';
 
 use App\Models\User;
 use App\Models\Product;
+use App\Models\Logger;
 use App\Views\AdminTemplate;
 
 class AdminController
@@ -183,6 +185,55 @@ class AdminController
             unset($user['password']);
         }
         
-        return json_encode($users, JSON_UNESCAPED_UNICODE);
+return json_encode($users, JSON_UNESCAPED_UNICODE);
+    }
+    
+    /**
+     * Страница логов ошибок
+     */
+    public function logs(): void
+    {
+        if (!$this->checkAdmin()) {
+            header('Location: /login');
+            exit;
+        }
+        
+        $logs = Logger::getErrors(100); // Получить 100 последних записей
+        echo AdminTemplate::renderLogs($logs);
+    }
+    
+    /**
+     * API: получить логи ошибок
+     */
+    public function apiLogs(): string
+    {
+        header('Content-Type: application/json');
+        
+        if (!$this->checkAdmin()) {
+            http_response_code(403);
+            return json_encode(['error' => 'Доступ запрещён'], JSON_UNESCAPED_UNICODE);
+        }
+        
+        $limit = isset($_GET['limit']) ? intval($_GET['limit']) : 100;
+        $logs = Logger::getErrors($limit);
+        
+return json_encode($logs, JSON_UNESCAPED_UNICODE);
+    }
+    
+    /**
+     * API: очистить логи ошибок
+     */
+    public function apiClearLogs(): string
+    {
+        header('Content-Type: application/json');
+        
+        if (!$this->checkAdmin()) {
+            http_response_code(403);
+            return json_encode(['error' => 'Доступ запрещён'], JSON_UNESCAPED_UNICODE);
+        }
+        
+        Logger::clear();
+        
+        return json_encode(['success' => true, 'message' => 'Логи успешно очищены'], JSON_UNESCAPED_UNICODE);
     }
 }
