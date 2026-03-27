@@ -116,6 +116,9 @@ const CartManager = {
             item.quantity = quantity;
             this.save(cart);
             this.syncUpdateBackend(id, quantity);
+            
+            // Обновить input в каталоге
+            this.updateCatalogInput(id, quantity);
             return true;
         }
         return false;
@@ -126,7 +129,34 @@ const CartManager = {
         let cart = this.get().filter(item => item.id !== id);
         this.save(cart);
         this.syncRemoveBackend(id);
+        
+        // Вернуть кнопку в каталоге
+        this.resetCatalogButton(id);
         return true;
+    },
+    
+    // Обновить input количества в каталоге
+    updateCatalogInput(id, quantity) {
+        const controls = document.querySelector(`.quantity-controls[data-product-id="${id}"]`);
+        if (controls) {
+            const input = controls.querySelector('.qty-input');
+            if (input) input.value = quantity;
+        }
+    },
+    
+    // Сбросить кнопку в каталоге (при удалении товара)
+    resetCatalogButton(id) {
+        const addBtn = document.querySelector(`.btn-add-to-cart[data-id="${id}"]`);
+        if (addBtn) {
+            const parent = addBtn.parentElement;
+            const controls = parent.querySelector('.quantity-controls');
+            if (controls) {
+                controls.classList.add('d-none');
+                addBtn.classList.remove('d-none');
+                const input = controls.querySelector('.qty-input');
+                input.value = 1;
+            }
+        }
     },
     
     // Очистить корзину
@@ -219,6 +249,9 @@ const CartManager = {
 document.addEventListener('DOMContentLoaded', function() {
     CartManager.updateCounter();
     
+    // Восстановить состояние кнопок на странице каталога
+    restoreCatalogButtons();
+    
     // Обработчики для страницы корзины
     if (document.getElementById('cart-items')) {
         initCartPage();
@@ -230,10 +263,77 @@ document.addEventListener('DOMContentLoaded', function() {
             const product = JSON.parse(this.dataset.product);
             CartManager.add(product);
             CartManager.showToast('"' + product.name + '" добавлен в корзину!');
-            animateButton(this);
+            // Переключаем на блок количества
+            switchToQuantityControls(this);
+        });
+    });
+    
+    // Обработчики для кнопок +/- в каталоге
+    document.querySelectorAll('.quantity-controls .btn-qty').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const controls = this.closest('.quantity-controls');
+            const input = controls.querySelector('.qty-input');
+            const productId = parseInt(controls.dataset.productId);
+            let value = parseInt(input.value) || 1;
+            
+            if (this.dataset.action === 'increase') {
+                value++;
+            } else {
+                value = Math.max(1, value - 1);
+            }
+            
+            input.value = value;
+            CartManager.updateQuantity(productId, value);
+        });
+    });
+    
+    // Обработчики для прямого ввода количества в каталоге
+    document.querySelectorAll('.quantity-controls .qty-input').forEach(input => {
+        input.addEventListener('change', function() {
+            const productId = parseInt(this.dataset.productId);
+            const value = parseInt(this.value) || 1;
+            CartManager.updateQuantity(productId, value);
         });
     });
 });
+
+// Восстановить состояние кнопок при загрузке страницы
+function restoreCatalogButtons() {
+    const cart = CartManager.get();
+    
+    cart.forEach(item => {
+        const addBtn = document.querySelector(`.btn-add-to-cart[data-id="${item.id}"]`);
+        if (addBtn) {
+            const controls = addBtn.parentElement.querySelector('.quantity-controls');
+            if (controls) {
+                const input = controls.querySelector('.qty-input');
+                input.value = item.quantity;
+                addBtn.classList.add('d-none');
+                controls.classList.remove('d-none');
+            }
+        }
+    });
+}
+
+// Переключение на блок управления количеством
+function switchToQuantityControls(btn) {
+    const productId = parseInt(btn.dataset.id);
+    const parent = btn.parentElement;
+    const controls = parent.querySelector('.quantity-controls');
+    
+    if (controls) {
+        btn.classList.add('d-none');
+        controls.classList.remove('d-none');
+        
+        // Установить текущее количество из корзины
+        const cart = CartManager.get();
+        const item = cart.find(i => i.id === productId);
+        if (item) {
+            const input = controls.querySelector('.qty-input');
+            input.value = item.quantity;
+        }
+    }
+}
 
 // Инициализация страницы корзины
 function initCartPage() {
