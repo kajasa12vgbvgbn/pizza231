@@ -130,15 +130,50 @@ class User
     
     /**
      * Создать нового пользователя (с ожиданием подтверждения email)
+     * Если пользователь с таким email уже существует и не подтверждён - обновляем код
      */
     public function create(string $email, string $password, string $name): ?array
     {
-        // Проверка, что email не занят
-        if ($this->findByEmail($email) !== null) {
-            return null;
+        $users = $this->loadData();
+        
+        // Проверяем, есть ли уже пользователь с таким email
+        $existingKey = null;
+        foreach ($users as $key => $user) {
+            if (strtolower($user['email']) === strtolower($email)) {
+                $existingKey = $key;
+                break;
+            }
         }
         
-        $users = $this->loadData();
+        // Если пользователь уже существует
+        if ($existingKey !== null) {
+            // Если уже подтверждён - не даём регистрироваться
+            if ($users[$existingKey]['is_verified'] ?? false) {
+                return null;
+            }
+            
+            // Если не подтверждён - обновляем данные и код подтверждения
+            $verificationCode = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+            $verificationExpires = date('Y-m-d H:i:s', time() + 3600);
+            
+            $users[$existingKey]['password'] = password_hash($password, PASSWORD_DEFAULT);
+            $users[$existingKey]['name'] = $name;
+            $users[$existingKey]['verification_code'] = $verificationCode;
+            $users[$existingKey]['verification_expires'] = $verificationExpires;
+            $users[$existingKey]['created_at'] = date('Y-m-d H:i:s');
+            
+            if ($this->saveData($users)) {
+                return [
+                    'id' => $users[$existingKey]['id'],
+                    'email' => $email,
+                    'name' => $name,
+                    'is_verified' => false,
+                    'verification_code' => $verificationCode
+                ];
+            }
+            
+            return null;
+        }
         
         // Генерация ID
         $maxId = 0;
@@ -173,7 +208,7 @@ class User
         
         return null;
     }
-    
+
     /**
      * Подтвердить email пользователя по коду
      */

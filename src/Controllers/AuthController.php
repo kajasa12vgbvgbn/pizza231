@@ -57,14 +57,21 @@ class AuthController
                         $result['name']
                     );
                     
-                    // Сохраняем email в сессию для подтверждения
+                    // Сразу входим в аккаунт
+                    $_SESSION['user_id'] = $result['id'];
+                    $_SESSION['user_name'] = $result['name'];
+                    $_SESSION['user_email'] = $result['email'];
+                    $_SESSION['is_admin'] = false;
+                    $_SESSION['is_verified'] = false; // Ещё не подтверждён
                     $_SESSION['pending_verification_email'] = $email;
+                    
+                    session_write_close();
                     
                     // Перенаправляем на страницу подтверждения
                     header('Location: /verify');
                     exit;
                 } else {
-                    $error = 'Пользователь с таким email уже существует';
+                    $error = 'Пользователь с таким email уже существует и подтверждён';
                 }
             }
         }
@@ -97,8 +104,12 @@ class AuthController
             } else {
                 // Проверяем код
                 if ($this->userModel->verifyEmail($email, $code)) {
-                    $success = 'Email подтверждён! Теперь вы можете войти.';
+                    $success = 'Email подтверждён!';
+                    $_SESSION['is_verified'] = true;
                     unset($_SESSION['pending_verification_email']);
+                    
+                    // Редирект на главную через 2 секунды
+                    header('Refresh: 2; URL=/');
                 } else {
                     $error = 'Неверный или истёкший код подтверждения';
                 }
@@ -140,7 +151,7 @@ class AuthController
             echo json_encode(['error' => 'Ошибка отправки письма'], JSON_UNESCAPED_UNICODE);
         }
     }
-        
+    
     /**
      * Страница входа
      */
@@ -155,22 +166,26 @@ class AuthController
             if (empty($email) || empty($password)) {
                 $error = 'Заполните все поля';
             } else {
-                // Сначала проверяем, подтверждён ли email
-                if (!$this->userModel->isVerified($email)) {
-                    // Сохраняем email для подтверждения и перенаправляем
-                    $_SESSION['pending_verification_email'] = $email;
-                    header('Location: /verify');
-                    exit;
-                }
-                
                 $user = $this->userModel->verifyPassword($email, $password);
                 
                 if ($user) {
+                    // Проверяем, подтверждён ли email
+                    $isVerified = $this->userModel->isVerified($email);
+                    
                     // Установка сессии
                     $_SESSION['user_id'] = $user['id'];
                     $_SESSION['user_name'] = $user['name'];
                     $_SESSION['user_email'] = $user['email'];
                     $_SESSION['is_admin'] = $user['is_admin'] ?? false;
+                    $_SESSION['is_verified'] = $isVerified;
+                    
+                    // Если email не подтверждён - перенаправляем на подтверждение
+                    if (!$isVerified) {
+                        $_SESSION['pending_verification_email'] = $email;
+                        session_write_close();
+                        header('Location: /verify');
+                        exit;
+                    }
                     
                     // Записать сессию
                     session_write_close();
@@ -212,12 +227,14 @@ class AuthController
         
         if (isset($_SESSION['user_id'])) {
             $isAdmin = $_SESSION['is_admin'] ?? false;
+            $isVerified = $_SESSION['is_verified'] ?? false;
             
             return [
                 'id' => $_SESSION['user_id'],
                 'name' => $_SESSION['user_name'],
                 'email' => $_SESSION['user_email'],
-                'is_admin' => $isAdmin
+                'is_admin' => $isAdmin,
+                'is_verified' => $isVerified
             ];
         }
         
@@ -261,21 +278,35 @@ class AuthController
                 $result['name']
             );
             
-            // Сохраняем email в сессию
+            // Сразу входим в аккаунт
             if (session_status() === PHP_SESSION_NONE) {
                 session_start();
             }
+            
+            $_SESSION['user_id'] = $result['id'];
+            $_SESSION['user_name'] = $result['name'];
+            $_SESSION['user_email'] = $result['email'];
+            $_SESSION['is_admin'] = false;
+            $_SESSION['is_verified'] = false;
             $_SESSION['pending_verification_email'] = $email;
+            
+            session_write_close();
             
             return json_encode([
                 'success' => true, 
                 'message' => 'На ваш email отправлен код подтверждения',
+                'user' => [
+                    'id' => $result['id'],
+                    'name' => $result['name'],
+                    'email' => $result['email'],
+                    'is_verified' => false
+                ],
                 'needs_verification' => true
             ], JSON_UNESCAPED_UNICODE);
         }
         
         http_response_code(400);
-        return json_encode(['error' => 'Пользователь с таким email уже существует'], JSON_UNESCAPED_UNICODE);
+        return json_encode(['error' => 'Пользователь с таким email уже существует и подтверждён'], JSON_UNESCAPED_UNICODE);
     }
     
     /**
@@ -294,23 +325,12 @@ class AuthController
             return json_encode(['error' => 'Заполните все поля'], JSON_UNESCAPED_UNICODE);
         }
         
-        // Проверяем, подтверждён ли email
-        if (!$this->userModel->isVerified($email)) {
-            if (session_status() === PHP_SESSION_NONE) {
-                session_start();
-            }
-            $_SESSION['pending_verification_email'] = $email;
-            
-            http_response_code(403);
-            return json_encode([
-                'error' => 'Требуется подтверждение email',
-                'needs_verification' => true
-            ], JSON_UNESCAPED_UNICODE);
-        }
-        
         $user = $this->userModel->verifyPassword($email, $password);
         
         if ($user) {
+            // Проверяем, подтверждён ли email
+            $isVerified = $this->userModel->isVerified($email);
+            
             if (session_status() === PHP_SESSION_NONE) {
                 session_start();
             }
@@ -319,6 +339,25 @@ class AuthController
             $_SESSION['user_name'] = $user['name'];
             $_SESSION['user_email'] = $user['email'];
             $_SESSION['is_admin'] = $user['is_admin'] ?? false;
+            $_SESSION['is_verified'] = $isVerified;
+            
+            // Если email не подтверждён - возвращаем информацию об этом
+            if (!$isVerified) {
+                $_SESSION['pending_verification_email'] = $email;
+                session_write_close();
+                
+                return json_encode([
+                    'success' => true,
+                    'user' => [
+                        'id' => $user['id'],
+                        'name' => $user['name'],
+                        'email' => $user['email'],
+                        'is_admin' => $user['is_admin'] ?? false,
+                        'is_verified' => false
+                    ],
+                    'needs_verification' => true
+                ], JSON_UNESCAPED_UNICODE);
+            }
             
             session_write_close();
             
@@ -328,7 +367,8 @@ class AuthController
                     'id' => $user['id'],
                     'name' => $user['name'],
                     'email' => $user['email'],
-                    'is_admin' => $user['is_admin'] ?? false
+                    'is_admin' => $user['is_admin'] ?? false,
+                    'is_verified' => true
                 ]
             ], JSON_UNESCAPED_UNICODE);
         }
@@ -364,10 +404,16 @@ class AuthController
         }
         
         if ($this->userModel->verifyEmail($email, $code)) {
+            $_SESSION['is_verified'] = true;
             unset($_SESSION['pending_verification_email']);
+            
             return json_encode([
                 'success' => true, 
-                'message' => 'Email подтверждён! Теперь вы можете войти.'
+                'message' => 'Email подтверждён!',
+                'user' => [
+                    'email' => $email,
+                    'is_verified' => true
+                ]
             ], JSON_UNESCAPED_UNICODE);
         }
         
@@ -442,6 +488,11 @@ class AuthController
             
             // Обновить сессию
             $_SESSION['is_admin'] = $isAdmin;
+            
+            // Проверить актуальный статус верификации
+            $isVerified = $this->userModel->isVerified($user['email']);
+            $user['is_verified'] = $isVerified;
+            $_SESSION['is_verified'] = $isVerified;
         }
         
         if ($user) {
