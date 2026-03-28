@@ -1,11 +1,12 @@
 <?php
 /**
- * Шаблон страниц авторизации (регистрация и вход)
+ * Шаблон страниц авторизации (регистрация, вход и подтверждение)
  * Доступные переменные:
  * - $error - сообщение об ошибке
  * - $success - сообщение об успехе
- * - $mode - 'register' или 'login'
+ * - $mode - 'register', 'login' или 'verify'
  * - $texts - массив текстов из storage/templates/auth.json
+ * - $email - email для подтверждения (для verify)
  */
 
 $texts = $texts ?? [];
@@ -13,6 +14,8 @@ $mode = $mode ?? 'login';
 
 if ($mode === 'register') {
     $formText = $texts['register'] ?? [];
+} elseif ($mode === 'verify') {
+    $formText = $texts['verify'] ?? [];
 } else {
     $formText = $texts['login'] ?? [];
 }
@@ -23,7 +26,7 @@ if ($mode === 'register') {
         <div class="col-md-6 col-lg-5">
             <div class="card shadow-sm">
                 <div class="card-body p-4">
-                    <h2 class="text-center mb-4"><?= htmlspecialchars($formText['title'] ?? ($mode === 'register' ? 'Регистрация' : 'Вход')) ?></h2>
+                    <h2 class="text-center mb-4"><?= htmlspecialchars($formText['title'] ?? ($mode === 'register' ? 'Регистрация' : ($mode === 'verify' ? 'Подтверждение email' : 'Вход'))) ?></h2>
 
                     <?php if (!empty($success)): ?>
                         <div class="alert alert-success"><?= htmlspecialchars($success) ?></div>
@@ -59,6 +62,82 @@ if ($mode === 'register') {
                             <span class="text-muted"><?= htmlspecialchars($formText['hasAccount'] ?? 'Уже есть аккаунт?') ?></span>
                             <a href="/login"><?= htmlspecialchars($formText['loginLink'] ?? 'Войти') ?></a>
                         </div>
+                    <?php elseif ($mode === 'verify'): ?>
+                        <div class="text-center mb-4">
+                            <p class="text-muted"><?= htmlspecialchars($formText['subtitle'] ?? 'На ваш email отправлен код подтверждения') ?></p>
+                            <strong><?= htmlspecialchars($email ?? '') ?></strong>
+                        </div>
+                        
+                        <form method="POST" action="/verify" id="verifyForm">
+                            <div class="mb-3">
+                                <label for="code" class="form-label"><?= htmlspecialchars($formText['codeLabel'] ?? 'Код подтверждения') ?></label>
+                                <input type="text" class="form-control text-center" id="code" name="code" 
+                                       required maxlength="6" pattern="[0-9]{6}" 
+                                       placeholder="000000" style="font-size: 24px; letter-spacing: 8px;">
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100"><?= htmlspecialchars($formText['submitVerify'] ?? 'Подтвердить') ?></button>
+                        </form>
+
+                        <div class="text-center mt-3">
+                            <button type="button" class="btn btn-link" id="resendBtn">
+                                <?= htmlspecialchars($formText['resend'] ?? 'Отправить код повторно') ?>
+                            </button>
+                            <div id="resendMessage" class="mt-2" style="display: none;"></div>
+                        </div>
+
+                        <div class="text-center mt-3">
+                            <span class="text-muted"><?= htmlspecialchars($formText['wrongEmail'] ?? 'Неверный email?') ?></span>
+                            <a href="/register"><?= htmlspecialchars($formText['registerAgain'] ?? 'Зарегистрироваться заново') ?></a>
+                        </div>
+
+                        <script>
+                        document.getElementById('verifyForm').addEventListener('submit', function(e) {
+                            e.preventDefault();
+                            const code = document.getElementById('code').value;
+                            
+                            fetch('/api/auth/verify', {
+                                method: 'POST',
+                                headers: {'Content-Type': 'application/json'},
+                                body: JSON.stringify({code: code})
+                            })
+                            .then(r => r.json())
+                            .then(data => {
+                                if (data.success) {
+                                    window.location.href = '/login?verified=1';
+                                } else {
+                                    alert(data.error || 'Ошибка подтверждения');
+                                }
+                            })
+                            .catch(() => alert('Ошибка соединения'));
+                        });
+
+                        document.getElementById('resendBtn').addEventListener('click', function() {
+                            const btn = this;
+                            btn.disabled = true;
+                            
+                            fetch('/api/auth/resend', {
+                                method: 'POST',
+                                headers: {'Content-Type': 'application/json'}
+                            })
+                            .then(r => r.json())
+                            .then(data => {
+                                const msg = document.getElementById('resendMessage');
+                                msg.style.display = 'block';
+                                if (data.success) {
+                                    msg.className = 'mt-2 text-success';
+                                    msg.textContent = data.message;
+                                } else {
+                                    msg.className = 'mt-2 text-danger';
+                                    msg.textContent = data.error;
+                                }
+                                btn.disabled = false;
+                            })
+                            .catch(() => {
+                                alert('Ошибка соединения');
+                                btn.disabled = false;
+                            });
+                        });
+                        </script>
                     <?php else: ?>
                         <form method="POST" action="/login">
                             <div class="mb-3">

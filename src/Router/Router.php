@@ -72,6 +72,10 @@ class Router
                 $auth = new AuthController();
                 return $auth->register();
             
+            case "verify":
+                $auth = new AuthController();
+                return $auth->verify();
+            
             case "login":
                 $auth = new AuthController();
                 return $auth->login();
@@ -154,6 +158,10 @@ case "admin":
                             return $auth->apiLogin();
                         case 'logout':
                             return $auth->apiLogout();
+                        case 'verify':
+                            return $auth->apiVerify();
+                        case 'resend':
+                            return $auth->apiResend();
                         case 'current':
                             return $auth->apiGetCurrent();
                         default:

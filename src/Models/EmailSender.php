@@ -325,5 +325,93 @@ class EmailSender
             ];
         }
     }
+    
+    /**
+     * Отправить код подтверждения email при регистрации
+     */
+    public static function sendVerificationCode(string $email, string $code, string $name): bool
+    {
+        try {
+            $config = self::getConfig();
+            
+            $mail = self::createMailer();
+            $mail->addAddress($email);
+            
+            // Тема письма
+            $mail->Subject = 'Код подтверждения регистрации';
+            
+            // HTML-тело письма
+            $mail->Body = self::generateVerificationEmailHtml($name, $code);
+            
+            // Альтернативное текстовое тело
+            $mail->AltBody = self::generateVerificationEmailText($name, $code);
+            
+            $mail->send();
+            
+            Logger::info('Verification code sent', ['email' => $email]);
+            return true;
+            
+        } catch (Exception $e) {
+            Logger::error('Failed to send verification email: ' . $e->getMessage(), [
+                'email' => $email
+            ]);
+            return false;
+        }
+    }
+    
+    /**
+     * Сгенерировать HTML-версию письма с кодом подтверждения
+     */
+    private static function generateVerificationEmailHtml(string $name, string $code): string
+    {
+        return '
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Подтверждение регистрации</title>
+            <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background-color: #007bff; color: white; padding: 20px; text-align: center; }
+                .content { padding: 20px; background-color: #f9f9f9; }
+                .code { font-size: 32px; font-weight: bold; letter-spacing: 8px; text-align: center; 
+                        padding: 20px; background: #fff; border: 2px dashed #007bff; 
+                        border-radius: 8px; margin: 20px 0; }
+                .warning { background-color: #fff3cd; padding: 15px; border-radius: 5px; 
+                          border-left: 4px solid #ffc107; margin-top: 20px; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>Подтверждение регистрации</h1>
+                </div>
+                <div class="content">
+                    <p>Здравствуйте, ' . htmlspecialchars($name) . '!</p>
+                    <p>Спасибо за регистрацию на нашем сайте. Для завершения регистрации введите следующий код:</p>
+                    <div class="code">' . htmlspecialchars($code) . '</div>
+                    <p>Код действителен в течение 1 часа.</p>
+                    <div class="warning">
+                        <strong>Внимание:</strong> Если вы не регистрировались на нашем сайте, просто проигнорируйте это письмо.
+                    </div>
+                </div>
+            </div>
+        </body>
+        </html>';
+    }
+    
+    /**
+     * Сгенерировать текстовую версию письма с кодом подтверждения
+     */
+    private static function generateVerificationEmailText(string $name, string $code): string
+    {
+        return "Подтверждение регистрации\n\n" .
+            "Здравствуйте, {$name}!\n\n" .
+            "Спасибо за регистрацию на нашем сайте. Для завершения регистрации введите следующий код:\n\n" .
+            "{$code}\n\n" .
+            "Код действителен в течение 1 часа.\n\n" .
+            "Если вы не регистрировались на нашем сайте, просто проигнорируйте это письмо.";
+    }
 }
 ?>

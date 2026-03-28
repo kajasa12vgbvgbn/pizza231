@@ -44,3 +44,7 @@
 [2026-03-27 11:17:01] INFO: 404 Not Found | Context: {"url":"\/favicon.ico"}
 [2026-03-27 11:18:23] INFO: Order notification sent to customer | Context: {"order_id":"order_69c6596d225c3","email":"moscvicin2007@gmail.com"}
 [2026-03-27 11:18:25] INFO: Order notification sent to admin | Context: {"order_id":"order_69c6596d225c3","email":"moscvicin1986@gmail.com"}
+[2026-03-28 06:44:59] INFO: 404 Not Found | Context: {"url":"\/favicon.ico"}
+[2026-03-28 06:45:29] ERROR: Failed to send verification email: SMTP Error: Could not authenticate. | Context: {"email":"moscvicin1986@gmail.com"}
+[2026-03-28 06:46:31] ERROR: Failed to send verification email: SMTP Error: Could not authenticate. | Context: {"email":"moscvicin1986@gmail.com"}
+[2026-03-28 06:48:21] INFO: Verification code sent | Context: {"email":"moscvicin1986@gmail.com"}

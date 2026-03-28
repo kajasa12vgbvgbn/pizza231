@@ -59,4 +59,20 @@ class AuthTemplate extends BaseTemplate
 
         return parent::getTemplate($content, $texts);
     }
+    
+    /**
+     * Рендер страницы подтверждения email
+     */
+    public static function renderVerify(string $email, string $error = '', string $success = ''): string
+    {
+        $texts = self::loadTexts();
+        $mode = 'verify';
+
+        // Подключаем шаблон
+        ob_start();
+        include self::TEMPLATE_PATH;
+        $content = ob_get_clean();
+
+        return parent::getTemplate($content, $texts);
+    }
 }

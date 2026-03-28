@@ -71,6 +71,7 @@ class User
         foreach ($admins as $key => $admin) {
             if (strtolower($admin['email']) === strtolower($email)) {
                 $admin['is_admin'] = true;
+                $admin['is_verified'] = true; // Админы всегда подтверждены
                 return $admin;
             }
         }
@@ -79,7 +80,7 @@ class User
         $users = $this->loadData();
         
         foreach ($users as $user) {
-            if ($user['email'] === $email) {
+            if (strtolower($user['email']) === strtolower($email)) {
                 return $user;
             }
         }
@@ -128,7 +129,7 @@ class User
     }
     
     /**
-     * Создать нового пользователя
+     * Создать нового пользователя (с ожиданием подтверждения email)
      */
     public function create(string $email, string $password, string $name): ?array
     {
@@ -147,20 +148,103 @@ class User
             }
         }
         
+        // Генерация кода подтверждения
+        $verificationCode = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        $verificationExpires = date('Y-m-d H:i:s', time() + 3600); // 1 час
+        
         $newUser = [
             'id' => $maxId + 1,
             'email' => $email,
             'password' => password_hash($password, PASSWORD_DEFAULT),
             'name' => $name,
+            'is_verified' => false,
+            'verification_code' => $verificationCode,
+            'verification_expires' => $verificationExpires,
             'created_at' => date('Y-m-d H:i:s')
         ];
         
         $users[] = $newUser;
         
         if ($this->saveData($users)) {
-            // Возвращаем пользователя без пароля
+            // Возвращаем пользователя без пароля, но с кодом для отправки
             unset($newUser['password']);
             return $newUser;
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Подтвердить email пользователя по коду
+     */
+    public function verifyEmail(string $email, string $code): bool
+    {
+        $users = $this->loadData();
+        
+        foreach ($users as &$user) {
+            if (strtolower($user['email']) === strtolower($email)) {
+                // Проверяем, уже ли подтверждён
+                if ($user['is_verified'] ?? false) {
+                    return true; // Уже подтверждён
+                }
+                
+                // Проверяем код и срок действия
+                if (($user['verification_code'] ?? '') !== $code) {
+                    return false; // Неверный код
+                }
+                
+                $expires = strtotime($user['verification_expires'] ?? '');
+                if ($expires < time()) {
+                    return false; // Код истёк
+                }
+                
+                // Подтверждаем email
+                $user['is_verified'] = true;
+                $user['verification_code'] = null;
+                $user['verification_expires'] = null;
+                $user['verified_at'] = date('Y-m-d H:i:s');
+                
+                return $this->saveData($users);
+            }
+        }
+        
+        return false;
+    }
+
+    /**
+     * Проверить, подтверждён ли email
+     */
+    public function isVerified(string $email): bool
+    {
+        $user = $this->findByEmail($email);
+        return $user !== null && ($user['is_verified'] ?? false) === true;
+    }
+    
+    /**
+     * Обновить код подтверждения (для повторной отправки)
+     */
+    public function regenerateVerificationCode(string $email): ?string
+    {
+        $users = $this->loadData();
+        
+        foreach ($users as &$user) {
+            if (strtolower($user['email']) === strtolower($email)) {
+                // Если уже подтверждён - возвращаем null
+                if ($user['is_verified'] ?? false) {
+                    return null;
+                }
+                
+                // Генерируем новый код
+                $verificationCode = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+                $verificationExpires = date('Y-m-d H:i:s', time() + 3600);
+                
+                $user['verification_code'] = $verificationCode;
+                $user['verification_expires'] = $verificationExpires;
+                
+                if ($this->saveData($users)) {
+                    return $verificationCode;
+                }
+            }
         }
         
         return null;

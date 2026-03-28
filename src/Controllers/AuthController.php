@@ -2,9 +2,11 @@
 namespace App\Controllers;
 
 require_once __DIR__ . '/../Models/User.php';
+require_once __DIR__ . '/../Models/EmailSender.php';
 require_once __DIR__ . '/../Views/AuthTemplate.php';
 
 use App\Models\User;
+use App\Models\EmailSender;
 use App\Views\AuthTemplate;
 
 class AuthController
@@ -32,6 +34,7 @@ class AuthController
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $email = trim($_POST['email'] ?? '');
             $password = $_POST['password'] ?? '';
+            $passwordConfirm = $_POST['password_confirm'] ?? '';
             $name = trim($_POST['name'] ?? '');
             
             // Валидация
@@ -41,11 +44,25 @@ class AuthController
                 $error = 'Введите корректный email';
             } elseif (strlen($password) < 6) {
                 $error = 'Пароль должен быть не менее 6 символов';
+            } elseif ($password !== $passwordConfirm) {
+                $error = 'Пароли не совпадают';
             } else {
                 $result = $this->userModel->create($email, $password, $name);
                 
                 if ($result) {
-                    $success = 'Регистрация успешна! Теперь вы можете войти.';
+                    // Отправляем код подтверждения
+                    EmailSender::sendVerificationCode(
+                        $result['email'],
+                        $result['verification_code'],
+                        $result['name']
+                    );
+                    
+                    // Сохраняем email в сессию для подтверждения
+                    $_SESSION['pending_verification_email'] = $email;
+                    
+                    // Перенаправляем на страницу подтверждения
+                    header('Location: /verify');
+                    exit;
                 } else {
                     $error = 'Пользователь с таким email уже существует';
                 }
@@ -55,6 +72,75 @@ class AuthController
         echo AuthTemplate::renderRegister($error, $success);
     }
     
+    /**
+     * Страница подтверждения email
+     */
+    public function verify(): void
+    {
+        $error = '';
+        $success = '';
+        $email = $_SESSION['pending_verification_email'] ?? '';
+        
+        // Если нет email в сессии, редирект на регистрацию
+        if (empty($email)) {
+            header('Location: /register');
+            exit;
+        }
+        
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $code = trim($_POST['code'] ?? '');
+            
+            if (empty($code)) {
+                $error = 'Введите код подтверждения';
+            } elseif (strlen($code) !== 6 || !ctype_digit($code)) {
+                $error = 'Код должен состоять из 6 цифр';
+            } else {
+                // Проверяем код
+                if ($this->userModel->verifyEmail($email, $code)) {
+                    $success = 'Email подтверждён! Теперь вы можете войти.';
+                    unset($_SESSION['pending_verification_email']);
+                } else {
+                    $error = 'Неверный или истёкший код подтверждения';
+                }
+            }
+        }
+        
+        echo AuthTemplate::renderVerify($email, $error, $success);
+    }
+    
+    /**
+     * Повторная отправка кода подтверждения
+     */
+    public function resendCode(): void
+    {
+        header('Content-Type: application/json');
+        
+        $email = $_SESSION['pending_verification_email'] ?? '';
+        
+        if (empty($email)) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Сессия истекла. Зарегистрируйтесь снова.'], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+        
+        $code = $this->userModel->regenerateVerificationCode($email);
+        
+        if ($code === null) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Email уже подтверждён'], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+        
+        $user = $this->userModel->findByEmail($email);
+        
+        if ($user && EmailSender::sendVerificationCode($email, $code, $user['name'])) {
+            echo json_encode(['success' => true, 'message' => 'Код отправлен повторно'], JSON_UNESCAPED_UNICODE);
+        } else {
+            http_response_code(500);
+            echo json_encode(['error' => 'Ошибка отправки письма'], JSON_UNESCAPED_UNICODE);
+        }
+    }
+        
     /**
      * Страница входа
      */
@@ -69,6 +155,14 @@ class AuthController
             if (empty($email) || empty($password)) {
                 $error = 'Заполните все поля';
             } else {
+                // Сначала проверяем, подтверждён ли email
+                if (!$this->userModel->isVerified($email)) {
+                    // Сохраняем email для подтверждения и перенаправляем
+                    $_SESSION['pending_verification_email'] = $email;
+                    header('Location: /verify');
+                    exit;
+                }
+                
                 $user = $this->userModel->verifyPassword($email, $password);
                 
                 if ($user) {
@@ -160,7 +254,24 @@ class AuthController
         $result = $this->userModel->create($email, $password, $name);
         
         if ($result) {
-            return json_encode(['success' => true, 'message' => 'Регистрация успешна'], JSON_UNESCAPED_UNICODE);
+            // Отправляем код подтверждения
+            EmailSender::sendVerificationCode(
+                $result['email'],
+                $result['verification_code'],
+                $result['name']
+            );
+            
+            // Сохраняем email в сессию
+            if (session_status() === PHP_SESSION_NONE) {
+                session_start();
+            }
+            $_SESSION['pending_verification_email'] = $email;
+            
+            return json_encode([
+                'success' => true, 
+                'message' => 'На ваш email отправлен код подтверждения',
+                'needs_verification' => true
+            ], JSON_UNESCAPED_UNICODE);
         }
         
         http_response_code(400);
@@ -181,6 +292,20 @@ class AuthController
         if (empty($email) || empty($password)) {
             http_response_code(400);
             return json_encode(['error' => 'Заполните все поля'], JSON_UNESCAPED_UNICODE);
+        }
+        
+        // Проверяем, подтверждён ли email
+        if (!$this->userModel->isVerified($email)) {
+            if (session_status() === PHP_SESSION_NONE) {
+                session_start();
+            }
+            $_SESSION['pending_verification_email'] = $email;
+            
+            http_response_code(403);
+            return json_encode([
+                'error' => 'Требуется подтверждение email',
+                'needs_verification' => true
+            ], JSON_UNESCAPED_UNICODE);
         }
         
         $user = $this->userModel->verifyPassword($email, $password);
@@ -210,6 +335,75 @@ class AuthController
         
         http_response_code(401);
         return json_encode(['error' => 'Неверный email или пароль'], JSON_UNESCAPED_UNICODE);
+    }
+    
+    /**
+     * API: подтверждение email
+     */
+    public function apiVerify(): string
+    {
+        header('Content-Type: application/json');
+        
+        $input = json_decode(file_get_contents('php://input'), true);
+        $code = trim($input['code'] ?? '');
+        $email = $_SESSION['pending_verification_email'] ?? '';
+        
+        if (empty($email)) {
+            http_response_code(400);
+            return json_encode(['error' => 'Сессия истекла. Зарегистрируйтесь снова.'], JSON_UNESCAPED_UNICODE);
+        }
+        
+        if (empty($code)) {
+            http_response_code(400);
+            return json_encode(['error' => 'Введите код подтверждения'], JSON_UNESCAPED_UNICODE);
+        }
+        
+        if (strlen($code) !== 6 || !ctype_digit($code)) {
+            http_response_code(400);
+            return json_encode(['error' => 'Код должен состоять из 6 цифр'], JSON_UNESCAPED_UNICODE);
+        }
+        
+        if ($this->userModel->verifyEmail($email, $code)) {
+            unset($_SESSION['pending_verification_email']);
+            return json_encode([
+                'success' => true, 
+                'message' => 'Email подтверждён! Теперь вы можете войти.'
+            ], JSON_UNESCAPED_UNICODE);
+        }
+        
+        http_response_code(400);
+        return json_encode(['error' => 'Неверный или истёкший код подтверждения'], JSON_UNESCAPED_UNICODE);
+    }
+    
+    /**
+     * API: повторная отправка кода
+     */
+    public function apiResend(): string
+    {
+        header('Content-Type: application/json');
+        
+        $email = $_SESSION['pending_verification_email'] ?? '';
+        
+        if (empty($email)) {
+            http_response_code(400);
+            return json_encode(['error' => 'Сессия истекла. Зарегистрируйтесь снова.'], JSON_UNESCAPED_UNICODE);
+        }
+        
+        $code = $this->userModel->regenerateVerificationCode($email);
+        
+        if ($code === null) {
+            http_response_code(400);
+            return json_encode(['error' => 'Email уже подтверждён'], JSON_UNESCAPED_UNICODE);
+        }
+        
+        $user = $this->userModel->findByEmail($email);
+        
+        if ($user && EmailSender::sendVerificationCode($email, $code, $user['name'])) {
+            return json_encode(['success' => true, 'message' => 'Код отправлен повторно'], JSON_UNESCAPED_UNICODE);
+        }
+        
+        http_response_code(500);
+        return json_encode(['error' => 'Ошибка отправки письма'], JSON_UNESCAPED_UNICODE);
     }
     
     /**
