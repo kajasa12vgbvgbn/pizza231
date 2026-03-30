@@ -428,7 +428,8 @@ class User
     public function isVerified(string $email): bool
     {
         $user = $this->findByEmail($email);
-        return $user !== null && ($user['is_verified'] ?? false) === true;
+        // MySQL возвращает is_verified как число 1/0, поэтому используем !empty()
+        return $user !== null && !empty($user['is_verified']);
     }
 
     /**

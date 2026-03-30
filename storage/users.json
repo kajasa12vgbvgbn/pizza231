@@ -34,7 +34,9 @@
         "email": "moscvicin2007@gmail.com",
         "password": "$2y$10$bZi473QzgM85T3RbKLDJkezZ3B67XWmcH4wC9wV83tna7A49F8x7G",
         "name": "Саша",
-        "created_at": "2026-03-27 11:17:32"
+        "created_at": "2026-03-27 11:17:32",
+        "verification_code": "115383",
+        "verification_expires": "2026-03-30 11:15:14"
     },
     {
         "id": 5,

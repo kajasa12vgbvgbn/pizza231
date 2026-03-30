@@ -103,7 +103,8 @@ if ($mode === 'register') {
                             .then(r => r.json())
                             .then(data => {
                                 if (data.success) {
-                                    window.location.href = '/login?verified=1';
+                                    // Перенаправляем на главную страницу после подтверждения
+                                    window.location.href = '/';
                                 } else {
                                     alert(data.error || 'Ошибка подтверждения');
                                 }
