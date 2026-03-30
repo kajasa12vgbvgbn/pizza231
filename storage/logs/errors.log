@@ -49,3 +49,5 @@
 [2026-03-28 06:46:31] ERROR: Failed to send verification email: SMTP Error: Could not authenticate. | Context: {"email":"moscvicin1986@gmail.com"}
 [2026-03-28 06:48:21] INFO: Verification code sent | Context: {"email":"moscvicin1986@gmail.com"}
 [2026-03-28 06:53:55] INFO: 404 Not Found | Context: {"url":"\/favicon.ico"}
+[2026-03-30 09:31:48] INFO: 404 Not Found | Context: {"url":"\/favicon.ico"}
+[2026-03-30 09:36:27] INFO: 404 Not Found | Context: {"url":"\/favicon.ico"}

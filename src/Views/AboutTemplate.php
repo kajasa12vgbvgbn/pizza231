@@ -11,9 +11,14 @@ class AboutTemplate extends BaseTemplate
     private const TEMPLATE_PATH = __DIR__ . '/templates/about.html.php';
 
     /**
-     * Путь к файлу с текстами
+     * Путь к файлу с текстами страницы
      */
     private const TEXTS_PATH = __DIR__ . '/../../storage/templates/about.json';
+
+    /**
+     * Путь к базовым текстам (nav, footer)
+     */
+    private const BASE_TEXTS_PATH = __DIR__ . '/../../storage/templates/base.json';
 
     /**
      * Загружает тексты из JSON файла
@@ -28,19 +33,29 @@ class AboutTemplate extends BaseTemplate
         return json_decode($json, true) ?? [];
     }
 
+    /**
+     * Загружает базовые тексты (nav, footer)
+     */
+    private static function loadBaseTexts(): array
+    {
+        $path = self::BASE_TEXTS_PATH;
+        if (!file_exists($path)) {
+            return [];
+        }
+        $json = file_get_contents($path);
+        return json_decode($json, true) ?? [];
+    }
+
     public static function getTemplate(string $content = '', array $texts = []): string
     {
-        // Загружаем тексты (если не переданы)
-        if (empty($texts)) {
-            $texts = self::loadTexts();
-        }
-
-        // Значения по умолчанию, если файл не загружен
-        $address = $texts['contacts']['addressValue'] ?? '650070, г. Кемерово, ул. Тухачевского, 32';
-        $phone = $texts['contacts']['phoneValue'] ?? '+7 (3842) 21-56-61';
-        $email = $texts['contacts']['emailValue'] ?? 'info@coopteh.ru';
-        $director = $texts['contacts']['directorName'] ?? 'Теребова Наталья Владимировна';
-        $mapId = 'YOUR_CONSTRUCTOR_ID';
+        // Загружаем тексты страницы (about.json)
+        $pageTexts = self::loadTexts();
+        
+        // Загружаем базовые тексты (nav, footer)
+        $baseTexts = self::loadBaseTexts();
+        
+        // Объединяем: базовые тексты + тексты страницы
+        $texts = array_merge($baseTexts, $pageTexts);
 
         // Подключаем шаблон
         ob_start();
