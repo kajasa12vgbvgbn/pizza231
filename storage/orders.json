@@ -145,5 +145,41 @@
         "total": 12500,
         "status": "new",
         "user_id": 4
+    },
+    {
+        "id": "order_69ca2eaa98612",
+        "created_at": "2026-03-30 10:04:58",
+        "fio": "Москвикинasfasfa",
+        "email": "admin@example.com",
+        "phone": "79235232565",
+        "address": "улица Пушкина",
+        "payment": "cash",
+        "items": [
+            {
+                "id": 1,
+                "name": "Коленвал",
+                "price": 19500,
+                "base_price": 16000,
+                "image": "\/assets\/img\/1.jpg",
+                "quantity": 1,
+                "modifiers": [
+                    {
+                        "name": "Установка",
+                        "price": 2000
+                    },
+                    {
+                        "name": "С гарантией",
+                        "price": 1500
+                    }
+                ],
+                "modifiers_display": "Установка, С гарантией",
+                "item_key": "1_51d82eae0c9c66e0c47ac0b0102e7215",
+                "added_at": 1774855655
+            }
+        ],
+        "total": 19500,
+        "status": "completed",
+        "user_id": 0,
+        "completed_at": "2026-03-30 10:05:18"
     }
 ]

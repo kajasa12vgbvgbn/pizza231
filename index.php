@@ -13,6 +13,15 @@ require_once __DIR__ . '/src/Controllers/CartController.php'; // 👈 Новый
 require_once __DIR__ . '/src/Models/Cart.php'; // 👈 Новая модель
 require_once __DIR__ . '/src/Models/Logger.php'; // 👈 Логирование ошибок
 
+// === Инициализация PDO (перед использованием моделей) ===
+require_once __DIR__ . '/src/Config/Config.php';
+require_once __DIR__ . '/src/Database/Database.php';
+
+use App\Config\Config;
+
+// Инициализируем подключение к БД (безопасно - если БД недоступна, будет fallback на JSON)
+Config::initDatabase();
+
 // Шаблоны
 require_once __DIR__ . '/src/Views/BaseTemplate.php';
 require_once __DIR__ . '/src/Views/HomeTemplate.php';

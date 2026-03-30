@@ -51,3 +51,9 @@
 [2026-03-28 06:53:55] INFO: 404 Not Found | Context: {"url":"\/favicon.ico"}
 [2026-03-30 09:31:48] INFO: 404 Not Found | Context: {"url":"\/favicon.ico"}
 [2026-03-30 09:36:27] INFO: 404 Not Found | Context: {"url":"\/favicon.ico"}
+[2026-03-30 10:05:01] INFO: Order notification sent to customer | Context: {"order_id":"order_69ca2eaa98612","email":"admin@example.com"}
+[2026-03-30 10:05:04] INFO: Order notification sent to admin | Context: {"order_id":"order_69ca2eaa98612","email":"moscvicin1986@gmail.com"}
+[2026-03-30 10:13:52] INFO: Verification code sent | Context: {"email":"moscvicin2007@gmail.com"}
+[2026-03-30 10:13:54] INFO: 404 Not Found | Context: {"url":"\/.well-known\/appspecific\/com.chrome.devtools.json"}
+[2026-03-30 10:14:05] INFO: 404 Not Found | Context: {"url":"\/.well-known\/appspecific\/com.chrome.devtools.json"}
+[2026-03-30 10:14:12] INFO: 404 Not Found | Context: {"url":"\/.well-known\/appspecific\/com.chrome.devtools.json"}
