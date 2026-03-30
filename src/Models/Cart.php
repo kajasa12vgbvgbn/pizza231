@@ -10,9 +10,9 @@ class Cart
      */
     public static function getItems(): array
     {
-        // Для PHP-обработки (если нужно)
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
+        // Не пытаемся запустить сессию если она уже активна
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+            @session_start();
         }
         
         return $_SESSION[self::STORAGE_KEY] ?? [];
@@ -23,8 +23,8 @@ class Cart
      */
     public static function add(int $id, string $name, float $price, string $image = '', int $quantity = 1): bool
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+            @session_start();
         }
         
         $cart = $_SESSION[self::STORAGE_KEY] ?? [];
@@ -55,8 +55,8 @@ class Cart
      */
     public static function updateQuantity(int $id, int $quantity): bool
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+            @session_start();
         }
         
         $cart = $_SESSION[self::STORAGE_KEY] ?? [];
@@ -78,8 +78,8 @@ class Cart
      */
     public static function remove(int $id): bool
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+            @session_start();
         }
         
         $cart = $_SESSION[self::STORAGE_KEY] ?? [];
@@ -93,8 +93,8 @@ class Cart
      */
     public static function clear(): bool
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+            @session_start();
         }
         
         unset($_SESSION[self::STORAGE_KEY]);

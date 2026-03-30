@@ -221,8 +221,9 @@ class AuthController
      */
     public static function getCurrentUser(): ?array
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
+        // Не пытаемся запустить сессию если она уже активна
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+            @session_start();
         }
         
         if (isset($_SESSION['user_id'])) {

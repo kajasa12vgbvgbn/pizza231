@@ -63,13 +63,14 @@ class Order
         // Генерация ID
         $maxId = 0;
         foreach ($orders as $order) {
-            if (($order['id'] ?? 0) > $maxId) {
-                $maxId = $order['id'];
+            $orderId = isset($order['id']) ? (int)$order['id'] : 0;
+            if ($orderId > $maxId) {
+                $maxId = $orderId;
             }
         }
 
         $newOrder = [
-            'id' => $maxId + 1,
+            'id' => (int)$maxId + 1,
             'user_id' => $orderData['user_id'] ?? null,
             'email' => $orderData['email'],
             'name' => $orderData['name'],
