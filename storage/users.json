@@ -130,5 +130,25 @@
         "verification_code": "478442",
         "verification_expires": "2026-03-30 12:10:34",
         "created_at": "2026-03-30 11:10:34"
+    },
+    {
+        "id": 14,
+        "email": "test_1774862355@example.com",
+        "password": "$2y$10$PE23KpjTORRpVNiFm2B5X.2.6fiJxUPdvAv86ZP1Mi4LyL7\/NcgcW",
+        "name": "Test User",
+        "is_verified": false,
+        "verification_code": "424473",
+        "verification_expires": "2026-03-30 12:19:15",
+        "created_at": "2026-03-30 11:19:15"
+    },
+    {
+        "id": 15,
+        "email": "duplicate_test_1774862359@example.com",
+        "password": "$2y$10$xaoXrCRFw3rdqmnD.wVsIu.KwXI\/0rs4K1H5YP.mbDOqfnjRqLZnK",
+        "name": "Test User 2",
+        "is_verified": false,
+        "verification_code": "025626",
+        "verification_expires": "2026-03-30 12:19:20",
+        "created_at": "2026-03-30 11:19:20"
     }
 ]
