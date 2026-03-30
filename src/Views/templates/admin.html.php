@@ -75,6 +75,17 @@ $revenueFormatted = number_format($stats['total_revenue'] ?? 0, 0, '.', ' ');
     <div class="row g-4">
         <div class="col-md-6">
             <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-box-seam me-2"></i><?= htmlspecialchars($cardsText['catalogTitle'] ?? 'Управление каталогом') ?></h5>
+                </div>
+                <div class="card-body">
+                    <p><?= htmlspecialchars($cardsText['catalogDesc'] ?? 'Добавление, редактирование и удаление товаров') ?></p>
+                    <a href="/admin/catalog" class="btn btn-success"><?= htmlspecialchars($cardsText['catalogLink'] ?? 'Перейти к каталогу') ?></a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0"><i class="bi bi-cart me-2"></i><?= htmlspecialchars($cardsText['ordersTitle'] ?? 'Управление заказами') ?></h5>
                 </div>
@@ -84,6 +95,9 @@ $revenueFormatted = number_format($stats['total_revenue'] ?? 0, 0, '.', ' ');
                 </div>
             </div>
         </div>
+    </div>
+
+    <div class="row g-4 mt-2">
         <div class="col-md-6">
             <div class="card">
                 <div class="card-header bg-primary text-white">
@@ -95,9 +109,6 @@ $revenueFormatted = number_format($stats['total_revenue'] ?? 0, 0, '.', ' ');
                 </div>
             </div>
         </div>
-    </div>
-
-    <div class="row g-4 mt-2">
         <div class="col-md-6">
             <div class="card">
                 <div class="card-header bg-warning text-dark">
@@ -110,4 +121,5 @@ $revenueFormatted = number_format($stats['total_revenue'] ?? 0, 0, '.', ' ');
             </div>
         </div>
     </div>
+
 </div>

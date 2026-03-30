@@ -236,4 +236,158 @@ return json_encode($logs, JSON_UNESCAPED_UNICODE);
         
         return json_encode(['success' => true, 'message' => 'Логи успешно очищены'], JSON_UNESCAPED_UNICODE);
     }
+    
+    /**
+     * Страница управления каталогом
+     */
+    public function catalog(): void
+    {
+        if (!$this->checkAdmin()) {
+            header('Location: /login');
+            exit;
+        }
+        
+        $products = $this->productModel->loadData() ?? [];
+        $categories = $this->productModel->getCategories();
+        
+        echo AdminTemplate::renderCatalog($products, $categories);
+    }
+    
+    /**
+     * API: получить все товары и категории
+     */
+    public function apiProducts(): string
+    {
+        header('Content-Type: application/json');
+        
+        if (!$this->checkAdmin()) {
+            http_response_code(403);
+            return json_encode(['error' => 'Доступ запрещён'], JSON_UNESCAPED_UNICODE);
+        }
+        
+        $products = $this->productModel->loadData() ?? [];
+        $categories = $this->productModel->getCategories();
+        
+        // Удаляем ключи массива, возвращаем простой список
+        $productsList = array_values($products);
+        
+        return json_encode([
+            'products' => $productsList,
+            'categories' => $categories
+        ], JSON_UNESCAPED_UNICODE);
+    }
+    
+    /**
+     * API: создать товар
+     */
+    public function apiCreateProduct(): string
+    {
+        header('Content-Type: application/json');
+        
+        if (!$this->checkAdmin()) {
+            http_response_code(403);
+            return json_encode(['error' => 'Доступ запрещён'], JSON_UNESCAPED_UNICODE);
+        }
+        
+        $input = json_decode(file_get_contents('php://input'), true);
+        
+        $name = trim($input['name'] ?? '');
+        $description = trim($input['description'] ?? '');
+        $price = floatval($input['price'] ?? 0);
+        $category = trim($input['category'] ?? 'Без категории');
+        $image = trim($input['image'] ?? '/assets/img/no-image.jpg');
+        
+        if (empty($name) || $price <= 0 || empty($category)) {
+            http_response_code(400);
+            return json_encode(['error' => 'Заполните название, цену и категорию'], JSON_UNESCAPED_UNICODE);
+        }
+        
+        $id = $this->productModel->create([
+            'name' => $name,
+            'description' => $description,
+            'price' => $price,
+            'category' => $category,
+            'image' => $image
+        ]);
+        
+        if ($id) {
+            return json_encode([
+                'success' => true,
+                'message' => 'Товар успешно добавлен',
+                'id' => $id
+            ], JSON_UNESCAPED_UNICODE);
+        }
+        
+        http_response_code(500);
+        return json_encode(['error' => 'Не удалось создать товар'], JSON_UNESCAPED_UNICODE);
+    }
+    
+    /**
+     * API: обновить товар
+     */
+    public function apiUpdateProduct(int $id): string
+    {
+        header('Content-Type: application/json');
+        
+        if (!$this->checkAdmin()) {
+            http_response_code(403);
+            return json_encode(['error' => 'Доступ запрещён'], JSON_UNESCAPED_UNICODE);
+        }
+        
+        $input = json_decode(file_get_contents('php://input'), true);
+        
+        $name = trim($input['name'] ?? '');
+        $description = trim($input['description'] ?? '');
+        $price = floatval($input['price'] ?? 0);
+        $category = trim($input['category'] ?? 'Без категории');
+        $image = trim($input['image'] ?? '/assets/img/no-image.jpg');
+        
+        if (empty($name) || $price <= 0 || empty($category)) {
+            http_response_code(400);
+            return json_encode(['error' => 'Заполните название, цену и категорию'], JSON_UNESCAPED_UNICODE);
+        }
+        
+        $result = $this->productModel->update($id, [
+            'name' => $name,
+            'description' => $description,
+            'price' => $price,
+            'category' => $category,
+            'image' => $image
+        ]);
+        
+        if ($result) {
+            return json_encode([
+                'success' => true,
+                'message' => 'Товар успешно обновлён'
+            ], JSON_UNESCAPED_UNICODE);
+        }
+        
+        http_response_code(500);
+        return json_encode(['error' => 'Не удалось обновить товар'], JSON_UNESCAPED_UNICODE);
+    }
+    
+    /**
+     * API: удалить товар
+     */
+    public function apiDeleteProduct(int $id): string
+    {
+        header('Content-Type: application/json');
+        
+        if (!$this->checkAdmin()) {
+            http_response_code(403);
+            return json_encode(['error' => 'Доступ запрещён'], JSON_UNESCAPED_UNICODE);
+        }
+        
+        $result = $this->productModel->delete($id);
+        
+        if ($result) {
+            return json_encode([
+                'success' => true,
+                'message' => 'Товар успешно удалён'
+            ], JSON_UNESCAPED_UNICODE);
+        }
+        
+        http_response_code(500);
+        return json_encode(['error' => 'Не удалось удалить товар'], JSON_UNESCAPED_UNICODE);
+    }
 }

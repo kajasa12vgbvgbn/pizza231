@@ -85,7 +85,7 @@ class Router
                 return $auth->logout();
                 
             // 👇 НОВЫЕ МАРШРУТЫ ДЛЯ АДМИНКИ
-case "admin":
+            case "admin":
                 $admin = new AdminController();
                 $action = $pieces[2] ?? 'index';
                 
@@ -96,6 +96,8 @@ case "admin":
                         return $admin->users();
                     case 'logs':
                         return $admin->logs();
+                    case 'catalog':
+                        return $admin->catalog();
                     case 'index':
                     case '':
                     default:
@@ -175,7 +177,7 @@ case "admin":
                     $admin = new AdminController();
                     $action = $pieces[3] ?? '';
                     
-switch ($action) {
+                    switch ($action) {
                         case 'stats':
                             return $admin->apiStats();
                         case 'orders':
@@ -186,6 +188,22 @@ switch ($action) {
                             return $admin->apiLogs();
                         case 'clear-logs':
                             return $admin->apiClearLogs();
+                        case 'products':
+                            return $admin->apiProducts();
+                        case 'product':
+                            // /api/admin/product - для POST (создание)
+                            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                                return $admin->apiCreateProduct();
+                            }
+                            // /api/admin/product/{id} - для PUT/DELETE
+                            $id = isset($pieces[4]) ? intval($pieces[4]) : 0;
+                            if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
+                                return $admin->apiUpdateProduct($id);
+                            } elseif ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
+                                return $admin->apiDeleteProduct($id);
+                            }
+                            http_response_code(400);
+                            return json_encode(['error' => 'Неизвестное действие']);
                         default:
                             http_response_code(400);
                             return json_encode(['error' => 'Неизвестное действие']);
