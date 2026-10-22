@@ -1,0 +1,276 @@
+# =====================================================================
+# CI — непрерывная интеграция проекта pizza231 (PHP + PHPUnit)
+#
+# Запускается на каждый push/PR и по ночному расписанию.
+# Структура:
+#   lint             -> синтаксис PHP + валидность composer.json
+#   test             -> тесты приложения (testsuite "Unit") на 2 версиях PHP
+#   pipeline-config  -> тесты конфигурации CI/CD (testsuite "Pipeline")
+#   red-demo         -> намеренно ПАДАЮЩИЕ тесты (testsuite "Red")
+#   report           -> сводка и общий вердикт
+#   package          -> сборка deploy-пакета только для ветки main
+#
+# Деплой описан отдельно: .github/workflows/deploy.yml
+# =====================================================================
+name: CI
+
+on:
+  push:
+    branches: [ main, 'task-*' ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # 03:30 UTC каждый день — ночная проверка, что ничего не «отвалилось»
+    - cron: '30 3 * * *'
+  workflow_dispatch:
+    inputs:
+      php_version:
+        description: 'Версия PHP для прогона тестов'
+        required: false
+        default: '8.2'
+
+# Новый push в ту же ветку отменяет предыдущую сборку
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  DEFAULT_PHP: '8.2'
+
+jobs:
+  # ------------------------------------------------------------------
+  # 1. Статические проверки
+  # ------------------------------------------------------------------
+  lint:
+    name: Линт (php -l, composer validate)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout кода
+        uses: actions/checkout@v4
+
+      - name: Установка PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.DEFAULT_PHP }}
+          coverage: none
+          ini-values: error_reporting=E_ALL, display_errors=stderr
+
+      - name: Проверка синтаксиса всех PHP-файлов
+        run: |
+          STATUS=0
+          while IFS= read -r -d '' FILE; do
+            if ! php -l "$FILE" > /dev/null 2>&1; then
+              echo "::error file=$FILE::Синтаксическая ошибка PHP"
+              php -l "$FILE"
+              STATUS=1
+            fi
+          done < <(find . -type f -name '*.php' \
+                     -not -path './vendor/*' \
+                     -not -path './storage/*' \
+                     -print0)
+          exit $STATUS
+
+      - name: Валидация composer.json
+        run: composer validate --no-check-publish --no-check-lock
+
+  # ------------------------------------------------------------------
+  # 2. Тесты приложения (models / controllers / config)
+  # ------------------------------------------------------------------
+  test:
+    name: PHPUnit Unit (PHP ${{ matrix.php }})
+    runs-on: ubuntu-latest
+    needs: lint
+    strategy:
+      fail-fast: false
+      matrix:
+        php: [ '8.1', '8.2' ]
+    steps:
+      - name: Checkout кода
+        uses: actions/checkout@v4
+
+      - name: Установка PHP ${{ matrix.php }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: pcov
+          extensions: mbstring, pdo, pdo_mysql, json, session, fileinfo
+          tools: composer:v2
+
+      - name: Кеш зависимостей Composer
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.composer/cache
+            vendor
+          key: composer-${{ matrix.php }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ matrix.php }}-
+
+      - name: composer install
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Тестовый конфиг email (email.php не хранится в git)
+        run: cp config/email.example.php config/email.php
+
+      - name: PHPUnit — тесты приложения (testsuite Unit)
+        run: |
+          mkdir -p build/reports
+          vendor/bin/phpunit --testsuite Unit \
+            --log-junit build/reports/junit-unit.xml \
+            --coverage-clover build/reports/clover.xml \
+            --coverage-text
+
+      - name: Публикация отчётов тестов
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-reports-php${{ matrix.php }}
+          path: build/reports
+          retention-days: 7
+
+  # ------------------------------------------------------------------
+  # 3. Тесты конфигурации CI/CD — этот набор должен быть ЗЕЛЁНЫМ
+  # ------------------------------------------------------------------
+  pipeline-config:
+    name: Тесты конфигурации CI/CD (зелёные)
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - name: Checkout кода
+        uses: actions/checkout@v4
+
+      - name: Установка PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.DEFAULT_PHP }}
+          coverage: none
+          tools: composer:v2
+
+      - name: composer install
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: PHPUnit — конфигурация пайплайна (testsuite Pipeline)
+        run: |
+          mkdir -p build/reports
+          vendor/bin/phpunit --testsuite Pipeline --testdox \
+            --log-junit build/reports/junit-pipeline.xml
+
+      - name: Публикация отчёта конфигурации
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pipeline-reports
+          path: build/reports
+          retention-days: 7
+
+  # ------------------------------------------------------------------
+  # 4. КРАСНЫЙ демонстрационный набор (TDD, красная фаза)
+  #
+  # Эти тесты НАМЕРЕННО падают: они описывают требования к пайплайну,
+  # которые ещё не реализованы. Шаг помечен continue-on-error, чтобы
+  # падение было видно красным крестом в UI, но не блокировало релиз.
+  # Чтобы сделать набор блокирующим — уберите continue-on-error.
+  # ------------------------------------------------------------------
+  red-demo:
+    name: Красные тесты пайплайна (ожидаемое падение)
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - name: Checkout кода
+        uses: actions/checkout@v4
+
+      - name: Установка PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.DEFAULT_PHP }}
+          coverage: none
+          tools: composer:v2
+
+      - name: composer install
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: PHPUnit — красная фаза (testsuite Red)
+        id: red
+        continue-on-error: true
+        run: vendor/bin/phpunit --testsuite Red --testdox
+
+      - name: Объяснение падения в сводке запуска
+        if: steps.red.outcome != 'success'
+        run: |
+          {
+            echo "### ⚠ Красный набор \`Red\` упал — это ожидаемо"
+            echo ""
+            echo "Это тесты, написанные заранее (красная фаза TDD). Чтобы пайплайн позеленел:"
+            echo ""
+            echo "1. добавить job \`security\` с \`composer audit\` в \`.github/workflows/ci.yml\`;"
+            echo "2. настроить порог покрытия в \`phpunit.xml\` (\`checkCodeCoverageOnFailure\`);"
+            echo "3. добавить PHP 8.3 в \`strategy.matrix.php\`;"
+            echo "4. написать \`tests/Router/RouterTest.php\` и \`tests/Models/EmailSenderTest.php\`;"
+            echo "5. добавить job \`smoke-test\` в \`.github/workflows/deploy.yml\`;"
+            echo "6. убрать \`config/email.php\` из рабочего дерева (секреты в git нельзя)."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ------------------------------------------------------------------
+  # 5. Общий вердикт — единственный «гейт» для деплоя
+  # ------------------------------------------------------------------
+  report:
+    name: Итог CI
+    runs-on: ubuntu-latest
+    needs: [ lint, test, pipeline-config, red-demo ]
+    if: always()
+    steps:
+      - name: Сводка по job'ам
+        run: |
+          {
+            echo "## Результат CI"
+            echo ""
+            echo "| Job | Итог |"
+            echo "| --- | --- |"
+            echo "| lint | ${{ needs.lint.result }} |"
+            echo "| test | ${{ needs.test.result }} |"
+            echo "| pipeline-config | ${{ needs.pipeline-config.result }} |"
+            echo "| red-demo (не блокирующий) | ${{ needs.red-demo.result }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Блокируем пайплайн при падении обязательных job'ов
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: |
+          echo "::error::Обязательный job упал — CI считается неуспешным."
+          exit 1
+
+  # ------------------------------------------------------------------
+  # 6. Сборка пакета для деплоя (только main)
+  # ------------------------------------------------------------------
+  package:
+    name: Сборка deploy-пакета
+    runs-on: ubuntu-latest
+    needs: [ lint, test, pipeline-config, report ]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout кода
+        uses: actions/checkout@v4
+
+      - name: Установка PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.DEFAULT_PHP }}
+          coverage: none
+          tools: composer:v2
+
+      - name: Продакшен-зависимости (без dev)
+        run: composer install --no-dev --no-interaction --prefer-dist --no-progress --optimize-autoloader
+
+      - name: Исключаем тесты и служебные файлы из релиза
+        run: rm -rf tests phpunit.xml .github .git
+
+      - name: Упаковка релиза
+        run: tar -czf "release-${GITHUB_SHA::8}.tar.gz" .
+
+      - name: Загрузка артефакта для CD
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-package
+          path: release-*.tar.gz
+          retention-days: 14

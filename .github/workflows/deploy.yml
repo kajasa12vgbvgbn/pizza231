@@ -1,0 +1,342 @@
+# =====================================================================
+# CD — непрерывная доставка проекта pizza231
+#
+# Триггеры:
+#   1. workflow_run  — после успешного CI на ветке main (основной путь,
+#                      берём готовый deploy-пакет из артефакта CI)
+#   2. release       — публикация релиза с тегом v*.*.*
+#   3. workflow_dispatch — ручной запуск с выбором окружения
+#
+# Требуемые secrets (Settings -> Secrets and variables -> Actions):
+#   DEPLOY_HOST        адрес сервера (или домен для smoke-теста)
+#   DEPLOY_PORT        SSH-порт, по умолчанию 22
+#   DEPLOY_USER        пользователь SSH
+#   DEPLOY_SSH_KEY     приватный ключ SSH
+#   DEPLOY_KNOWN_HOSTS вывод `ssh-keyscan -p <порт> <хост>` (опционально)
+#   DEPLOY_PATH        каталог приложения на сервере, /var/www/pizza231
+#
+# Если секреты не заданы — выкладка честно помечается пропущенной.
+# =====================================================================
+name: CD
+
+on:
+  workflow_run:
+    workflows: [ CI ]
+    types: [ completed ]
+    branches: [ main ]
+  release:
+    types: [ published ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Куда деплоим'
+        required: true
+        default: production
+        type: choice
+        options:
+          - staging
+          - production
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  DEFAULT_PHP: '8.2'
+  DEPLOY_PATH: /var/www/pizza231
+
+jobs:
+  # ------------------------------------------------------------------
+  # 1. Допуск: стоит ли вообще выкладывать
+  # ------------------------------------------------------------------
+  gate:
+    name: Допуск к деплою
+    runs-on: ubuntu-latest
+    if: >
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
+      github.event_name == 'release' ||
+      github.event_name == 'workflow_dispatch'
+    outputs:
+      deploy_enabled: ${{ steps.secrets-check.outputs.deploy_enabled }}
+      artifact_run_id: ${{ steps.source.outputs.run_id }}
+      has_ci_artifact: ${{ steps.source.outputs.has_ci_artifact }}
+    steps:
+      - name: Проверка наличия SSH-секретов
+        id: secrets-check
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          if [ -z "$DEPLOY_SSH_KEY" ] || [ -z "$DEPLOY_HOST" ]; then
+            echo "deploy_enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Секреты DEPLOY_HOST / DEPLOY_SSH_KEY не настроены — выкладка будет пропущена."
+          else
+            echo "deploy_enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Определить источник deploy-пакета
+        id: source
+        run: |
+          RUN_ID="${{ github.event.workflow_run.id }}"
+          if [ -n "$RUN_ID" ]; then
+            echo "run_id=$RUN_ID"        >> "$GITHUB_OUTPUT"
+            echo "has_ci_artifact=true"  >> "$GITHUB_OUTPUT"
+            echo "Пакет будет взят из CI-рана #$RUN_ID"
+          else
+            echo "run_id=${{ github.run_id }}" >> "$GITHUB_OUTPUT"
+            echo "has_ci_artifact=false"       >> "$GITHUB_OUTPUT"
+            echo "Пакет будет собран из исходников"
+          fi
+
+  # ------------------------------------------------------------------
+  # 2. Получаем или собираем пакет и проверяем его целостность
+  # ------------------------------------------------------------------
+  verify-artifact:
+    name: Подготовка и проверка пакета
+    runs-on: ubuntu-latest
+    needs: gate
+    steps:
+      - name: Checkout кода
+        if: needs.gate.outputs.has_ci_artifact != 'true'
+        uses: actions/checkout@v4
+
+      - name: Установка PHP
+        if: needs.gate.outputs.has_ci_artifact != 'true'
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.DEFAULT_PHP }}
+          coverage: none
+          tools: composer:v2
+
+      - name: Сборка пакета из исходников (для release / ручного запуска)
+        if: needs.gate.outputs.has_ci_artifact != 'true'
+        run: |
+          set -euo pipefail
+          composer install --no-dev --no-interaction --prefer-dist --no-progress --optimize-autoloader
+          rm -rf tests .github
+          mkdir -p incoming
+          tar -czf "incoming/release-${GITHUB_SHA::8}.tar.gz" --exclude='./.git' .
+
+      - name: Скачивание пакета из CI-рана
+        if: needs.gate.outputs.has_ci_artifact == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: deploy-package
+          path: incoming
+          run-id: ${{ needs.gate.outputs.artifact_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Проверка целостности пакета
+        run: |
+          set -euo pipefail
+          ARCHIVE=$(find incoming -name 'release-*.tar.gz' -type f | head -n 1)
+          if [ -z "$ARCHIVE" ]; then
+            echo "::error::Deploy-пакет не найден. Проверьте, что CI на main завершился успешно и job package собрал артефакт."
+            exit 1
+          fi
+          echo "Проверяю пакет: $ARCHIVE"
+          mkdir -p unpacked
+          tar -xzf "$ARCHIVE" -C unpacked
+
+          for REQUIRED in index.php composer.json src/Controllers src/Models src/Router src/Views; do
+            if [ ! -e "unpacked/$REQUIRED" ]; then
+              echo "::error file=$REQUIRED::В пакете отсутствует обязательный файл/каталог"
+              exit 1
+            fi
+          done
+
+          php -l unpacked/index.php > /dev/null
+          php -l unpacked/src/Router/Router.php > /dev/null
+
+          if [ ! -d unpacked/vendor ]; then
+            echo "::warning::В пакете нет vendor/ — на сервере потребуется composer install"
+          fi
+          echo "Файлов в пакете: $(find unpacked -type f | wc -l)"
+
+      - name: Сохраняем проверенный пакет для job'а deploy
+        uses: actions/upload-artifact@v4
+        with:
+          name: verified-release-package
+          path: incoming
+          retention-days: 1
+
+  # ------------------------------------------------------------------
+  # 3. Выкладка на сервер
+  # ------------------------------------------------------------------
+  deploy:
+    name: Деплой на сервер
+    runs-on: ubuntu-latest
+    needs: [ gate, verify-artifact ]
+    if: needs.gate.outputs.deploy_enabled == 'true'
+    environment:
+      name: production
+      url: https://pizza231.example.com
+    steps:
+      - name: Скачивание проверенного пакета
+        uses: actions/download-artifact@v4
+        with:
+          name: verified-release-package
+          path: incoming
+
+      - name: Настройка SSH-доступа
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          if [ -n "${DEPLOY_KNOWN_HOSTS:-}" ]; then
+            printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+            chmod 644 ~/.ssh/known_hosts
+          fi
+
+      - name: Выкладка новой версии (releases + атомарный symlink)
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+        run: |
+          set -euo pipefail
+          PORT="${DEPLOY_PORT:-22}"
+          RELEASE="release-${GITHUB_SHA::8}"
+          ARCHIVE=$(find incoming -name 'release-*.tar.gz' -type f | head -n 1)
+          SSH="ssh -i ~/.ssh/id_deploy -p $PORT -o StrictHostKeyChecking=accept-new"
+
+          $SSH "$DEPLOY_USER@$DEPLOY_HOST" \
+            "mkdir -p '$DEPLOY_PATH/releases/$RELEASE' '$DEPLOY_PATH/shared/storage/logs' '$DEPLOY_PATH/shared/config'"
+
+          scp -i ~/.ssh/id_deploy -P "$PORT" -o StrictHostKeyChecking=accept-new \
+            "$ARCHIVE" "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/releases/$RELEASE/app.tar.gz"
+
+          $SSH "$DEPLOY_USER@$DEPLOY_HOST" \
+            "set -e; cd '$DEPLOY_PATH/releases/$RELEASE'; tar -xzf app.tar.gz; rm -f app.tar.gz; \
+             mkdir -p storage; \
+             rm -rf storage/logs; ln -sfn '$DEPLOY_PATH/shared/storage/logs' storage/logs; \
+             if [ -f '$DEPLOY_PATH/shared/config/email.php' ]; then ln -sfn '$DEPLOY_PATH/shared/config/email.php' config/email.php; fi; \
+             ln -nfn '$DEPLOY_PATH/releases/$RELEASE' '$DEPLOY_PATH/current.new'; \
+             mv -Tf '$DEPLOY_PATH/current.new' '$DEPLOY_PATH/current'; \
+             echo 'Активна версия: $RELEASE'"
+
+      - name: Зависимости и права на сервере
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+        run: |
+          set -euo pipefail
+          PORT="${DEPLOY_PORT:-22}"
+          ssh -i ~/.ssh/id_deploy -p "$PORT" -o StrictHostKeyChecking=accept-new \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            "set -e; cd '$DEPLOY_PATH/current'; \
+             if [ ! -d vendor ] && command -v composer > /dev/null 2>&1; then \
+               composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader; \
+             fi; \
+             if [ -d storage ]; then find storage -type d -exec chmod 775 {} \;; fi"
+
+      - name: Откат на предыдущую версию при неудаче
+        if: failure()
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+        run: |
+          echo "::warning::Деплой упал — возвращаю предыдущий релиз"
+          PORT="${DEPLOY_PORT:-22}"
+          ssh -i ~/.ssh/id_deploy -p "$PORT" -o StrictHostKeyChecking=accept-new \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            "set -e; cd '$DEPLOY_PATH/releases' 2>/dev/null || exit 0; \
+             PREV=\$(ls -1dt */ | sed -n '2p'); \
+             if [ -n \"\$PREV\" ]; then \
+               ln -nfn \"\$DEPLOY_PATH/releases/\$PREV\" '$DEPLOY_PATH/current.new'; \
+               mv -Tf '$DEPLOY_PATH/current.new' '$DEPLOY_PATH/current'; \
+               echo \"Откат выполнен на \$PREV\"; \
+             fi" || echo "::warning::Откат не выполнен"
+
+  # ------------------------------------------------------------------
+  # 4. Smoke-тест живой площадки
+  # ------------------------------------------------------------------
+  smoke-test:
+    name: Smoke-тест прода
+    runs-on: ubuntu-latest
+    needs: [ gate, deploy ]
+    if: needs.gate.outputs.deploy_enabled == 'true'
+    steps:
+      - name: Проверка ключевых маршрутов
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          set -euo pipefail
+          FAILED=0
+          for ROUTE in / /catalog /about; do
+            CODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "https://${DEPLOY_HOST}${ROUTE}" || echo 000)
+            echo "GET ${ROUTE} -> HTTP ${CODE}"
+            if [ "$CODE" != "200" ]; then
+              echo "::error::Smoke-тест упал на маршруте ${ROUTE} (HTTP ${CODE})"
+              FAILED=1
+            fi
+          done
+          exit $FAILED
+
+  # ------------------------------------------------------------------
+  # 5. Очистка старых релизов
+  # ------------------------------------------------------------------
+  cleanup:
+    name: Очистка старых релизов
+    runs-on: ubuntu-latest
+    needs: [ gate, deploy, smoke-test ]
+    if: success() && needs.gate.outputs.deploy_enabled == 'true'
+    steps:
+      - name: Настройка SSH-доступа
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+
+      - name: Оставляем 5 последних релизов
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+        run: |
+          set -euo pipefail
+          PORT="${DEPLOY_PORT:-22}"
+          ssh -i ~/.ssh/id_deploy -p "$PORT" -o StrictHostKeyChecking=accept-new \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            "cd '$DEPLOY_PATH/releases' && ls -1dt */ | tail -n +6 | xargs -r rm -rf"
+
+  # ------------------------------------------------------------------
+  # 6. Итог
+  # ------------------------------------------------------------------
+  notify:
+    name: Итог CD
+    runs-on: ubuntu-latest
+    needs: [ gate, verify-artifact, deploy, smoke-test ]
+    if: always()
+    steps:
+      - name: Сводка по деплою
+        run: |
+          {
+            echo "## Результат CD"
+            echo ""
+            echo "| Job | Итог |"
+            echo "| --- | --- |"
+            echo "| gate | ${{ needs.gate.result }} |"
+            echo "| verify-artifact | ${{ needs.verify-artifact.result }} |"
+            echo "| deploy | ${{ needs.deploy.result }} |"
+            echo "| smoke-test | ${{ needs.smoke-test.result }} |"
+            echo ""
+            echo "- Допуск по секретам: \`deploy_enabled = ${{ needs.gate.outputs.deploy_enabled }}\`"
+            if [ "${{ needs.gate.outputs.deploy_enabled }}" != "true" ]; then
+              echo ""
+              echo "> Секреты \`DEPLOY_HOST\`/\`DEPLOY_SSH_KEY\` не настроены — фактическая выкладка пропущена."
+              echo "> Настройте их в Settings -> Secrets and variables -> Actions, чтобы CD заработал на боевой сервер."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
