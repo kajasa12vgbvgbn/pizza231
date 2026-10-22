@@ -23,7 +23,7 @@ class ValidateRegisterDataTest extends TestCase
             'password' => 'strongPass123',
             'password_confirm' => 'strongPass123',
         ];
-        $this->assertNotEmpty($this->validator->validate($data));
+        $this->assertEmpty($this->validator->validate($data));
     }
 
     public function testEmptyUsername(): void
