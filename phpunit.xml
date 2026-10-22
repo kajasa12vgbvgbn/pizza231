@@ -3,10 +3,57 @@
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
          bootstrap="tests/bootstrap.php"
          colors="true"
-         executionOrder="depends,defects">
+         executionOrder="depends,defects"
+         cacheResultFile=".phpunit.result.cache"
+         failOnRisky="false"
+         failOnWarning="false">
+
+    <!-- ============================================================= -->
+    <!-- Наборы тестов                                                  -->
+    <!-- ============================================================= -->
     <testsuites>
+        <!-- Тесты приложения: модели, контроллеры, конфиги.         -->
+        <!-- Каталог tests/Pipeline исключён, чтобы не дублировать.  -->
         <testsuite name="Unit">
-            <directory>tests</directory>
+            <directory suffix="Test.php">tests</directory>
+            <exclude>tests/Pipeline</exclude>
+            <exclude>tests/RedDemo</exclude>
+        </testsuite>
+
+        <!-- Зелёные тесты конфигурации CI/CD.                        -->
+        <testsuite name="Pipeline">
+            <directory suffix="Test.php">tests/Pipeline</directory>
+        </testsuite>
+
+        <!-- Красные TDD-тесты — намеренно падают до реализации.      -->
+        <testsuite name="Red">
+            <directory suffix="Test.php">tests/RedDemo</directory>
+        </testsuite>
+
+        <!-- Все тесты (Unit + Pipeline + Red).                       -->
+        <testsuite name="All">
+            <directory suffix="Test.php">tests</directory>
         </testsuite>
     </testsuites>
+
+    <!-- ============================================================= -->
+    <!-- Покрытие кода                                                  -->
+    <!-- ============================================================= -->
+    <coverage>
+        <include>
+            <directory suffix=".php">src</directory>
+        </include>
+        <report>
+            <clover outputFile="build/reports/clover.xml"/>
+            <text outputFile="build/reports/coverage.txt"/>
+        </report>
+    </coverage>
+
+    <!-- ============================================================= -->
+    <!-- Логирование результатов                                        -->
+    <!-- ============================================================= -->
+    <logging>
+        <junit outputFile="build/reports/junit.xml"/>
+    </logging>
+
 </phpunit>

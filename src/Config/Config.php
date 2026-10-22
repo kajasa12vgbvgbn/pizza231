@@ -12,8 +12,8 @@ class Config
     // === Настройки базы данных PDO ===
     const DB_DRIVER = 'mysql';
     const DB_HOST = 'localhost';
-    const DB_PORT = 3307;
-    const DB_DATABASE = 'auto_parts';      // Имя БД
+    const DB_PORT = 3306;                  // Стандартный порт XAMPP MySQL
+    const DB_DATABASE = 'automaster';      // Имя БД
     const DB_USERNAME = 'root';            // Имя пользователя
     const DB_PASSWORD = '';                // Пароль
     const DB_CHARSET = 'utf8mb4';
